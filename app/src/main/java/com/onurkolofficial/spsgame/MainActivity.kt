@@ -67,6 +67,9 @@ class MainActivity : ComponentActivity() {
                             // Handled by its own screen confirmation triggers
                         } else {
                             soundManager.playClick()
+                            if (currentScreen == "single" || currentScreen == "two") {
+                                adManager.showInterstitialAd()
+                            }
                             currentScreen = "menu"
                         }
                     }
@@ -115,8 +118,10 @@ class MainActivity : ComponentActivity() {
                                 soundManager = soundManager,
                                 vibrationManager = vibrationManager,
                                 playGamesManager = playGamesManager,
-                                adManager = adManager,
-                                onNavigateBack = { currentScreen = "menu" }
+                                onNavigateBack = {
+                                    adManager.showInterstitialAd()
+                                    currentScreen = "menu"
+                                }
                             )
                         }
                         "two" -> {
@@ -125,7 +130,10 @@ class MainActivity : ComponentActivity() {
                                 soundManager = soundManager,
                                 vibrationManager = vibrationManager,
                                 playGamesManager = playGamesManager,
-                                onNavigateBack = { currentScreen = "menu" }
+                                onNavigateBack = {
+                                    adManager.showInterstitialAd()
+                                    currentScreen = "menu"
+                                }
                             )
                         }
                         "online" -> {
@@ -134,7 +142,10 @@ class MainActivity : ComponentActivity() {
                                 soundManager = soundManager,
                                 vibrationManager = vibrationManager,
                                 playGamesManager = playGamesManager,
-                                onNavigateBack = { currentScreen = "menu" }
+                                onNavigateBack = {
+                                    adManager.showInterstitialAd()
+                                    currentScreen = "menu"
+                                }
                             )
                         }
                         "settings" -> {

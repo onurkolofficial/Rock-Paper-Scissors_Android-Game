@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.onurkolofficial.spsgame.R
 import com.onurkolofficial.spsgame.data.GamePreferences
+import com.startapp.sdk.adsbase.model.AdPreferences
 import com.onurkolofficial.spsgame.ui.components.StoreModal
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
 import com.onurkolofficial.spsgame.utils.SoundManager
@@ -126,7 +127,11 @@ fun MainMenuScreen(
             ) {
                 AndroidView(
                     factory = { context ->
-                        com.startapp.sdk.ads.banner.Banner(context)
+                        val adPrefs = AdPreferences().apply {
+                            adTag = "RPSGame_MainBanner"
+                            minCpm = 0.05
+                        }
+                        com.startapp.sdk.ads.banner.Banner(context, adPrefs)
                     },
                     modifier = Modifier.fillMaxSize()
                 )

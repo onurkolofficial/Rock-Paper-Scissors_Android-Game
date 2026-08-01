@@ -37,7 +37,6 @@ import com.onurkolofficial.spsgame.ui.components.Skin
 import com.onurkolofficial.spsgame.ui.components.SkinIcon
 import com.onurkolofficial.spsgame.ui.components.SKINS_LIST
 import com.onurkolofficial.spsgame.ui.components.StoreModal
-import com.onurkolofficial.spsgame.utils.AdManager
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
@@ -50,7 +49,6 @@ fun SinglePlayerScreen(
     soundManager: SoundManager,
     vibrationManager: VibrationManager,
     playGamesManager: PlayGamesManager,
-    adManager: AdManager,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -155,10 +153,6 @@ fun SinglePlayerScreen(
                 }
 
                 checkAchievements(prefs, playGamesManager, streak)
-
-                if (roundNum % 4 == 0) {
-                    adManager.showInterstitialAd()
-                }
                 
                 roundNum++
                 
