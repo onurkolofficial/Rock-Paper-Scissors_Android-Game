@@ -211,13 +211,13 @@ fun TwoPlayerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "PLAYER 2",
+                        text = stringResource(id = R.string.game_player_2).toAppUppercase(),
                         color = Color.White.copy(alpha = 0.5f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
                     Text(
-                        text = "SCORE: $p2Score",
+                        text = "${stringResource(id = R.string.score_label)}: $p2Score",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp
@@ -356,13 +356,13 @@ fun TwoPlayerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "PLAYER 1",
+                        text = stringResource(id = R.string.game_player_1).toAppUppercase(),
                         color = Color.White.copy(alpha = 0.5f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
                     Text(
-                        text = "SCORE: $p1Score",
+                        text = "${stringResource(id = R.string.score_label)}: $p1Score",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp
@@ -478,7 +478,7 @@ fun TwoPlayerMoveCard(
             )
             
             Text(
-                text = move.name.toAppUppercase(),
+                text = stringResource(id = move.getNameRes()).toAppUppercase(),
                 color = Color.White.copy(alpha = if (enabled) 1f else 0.3f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black

@@ -1,5 +1,6 @@
 package com.onurkolofficial.spsgame.ui.screens
 import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
+import androidx.compose.ui.window.Dialog
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
@@ -52,6 +53,9 @@ fun MainMenuScreen(
     var userName by remember { mutableStateOf(prefs.userName) }
     var statsCash by remember { mutableIntStateOf(prefs.statsCash) }
     var onlinePlayers by remember { mutableStateOf<Int?>(null) }
+    var showUpdateDialog by remember {
+        mutableStateOf(prefs.lastSeenUpdateDialogVersion != com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME)
+    }
     LaunchedEffect(Unit) {
         soundManager.startBgm()
         playGamesManager.checkSilentSignIn { success, name, _ ->
@@ -104,6 +108,60 @@ fun MainMenuScreen(
             onRefreshCash = { statsCash = prefs.statsCash }
         )
         return
+    }
+
+    if (showUpdateDialog) {
+        Dialog(onDismissRequest = {
+            prefs.lastSeenUpdateDialogVersion = com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME
+            showUpdateDialog = false
+        }) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF1E2124),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.update_dialog_title, com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME),
+                        color = Color(0xFF10B981),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(id = R.string.update_dialog_features),
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 13.sp,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = {
+                            soundManager.playClick()
+                            prefs.lastSeenUpdateDialogVersion = com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME
+                            showUpdateDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.update_dialog_close).toAppUppercase(),
+                            color = Color(0xFF0F1112),
+                            fontWeight = FontWeight.Black,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        }
     }
 
     Box(
@@ -281,18 +339,46 @@ fun MainMenuScreen(
                     onNavigateToTwoPlayer()
                 }
 
-                val onlinePlayersText = if (onlinePlayers != null) {
-                    "● $onlinePlayers ${stringResource(id = R.string.online_players_count).toAppUppercase()}"
-                } else {
-                    "● ... ${stringResource(id = R.string.online_players_count).toAppUppercase()}"
-                }
-
                 MenuButton(
                     text = stringResource(id = R.string.menu_online_multiplayer),
-                    subText = onlinePlayersText,
                     icon = "🌐",
                     containerColor = Color(0xFF1B2F52),
-                    iconContainerColor = Color(0xFF2D4B7C)
+                    iconContainerColor = Color(0xFF2D4B7C),
+                    subTextContent = {
+                        if (onlinePlayers != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(Color(0xFF10B981), CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "$onlinePlayers ${stringResource(id = R.string.online_players_count).toAppUppercase()}",
+                                    color = Color(0xFF10B981),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    color = Color(0xFF3B82F6),
+                                    modifier = Modifier.size(10.dp),
+                                    strokeWidth = 1.5.dp
+                                )
+                                Text(
+                                    text = stringResource(id = R.string.online_connecting_short),
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 ) {
                     vibrationManager.vibrateClick()
                     soundManager.playClick()
@@ -341,6 +427,7 @@ fun MainMenuScreen(
 fun MenuButton(
     text: String,
     subText: String? = null,
+    subTextContent: (@Composable () -> Unit)? = null,
     icon: String,
     containerColor: Color,
     iconContainerColor: Color,
@@ -394,7 +481,10 @@ fun MenuButton(
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp
                 )
-                if (subText != null) {
+                if (subTextContent != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    subTextContent()
+                } else if (subText != null) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = subText,

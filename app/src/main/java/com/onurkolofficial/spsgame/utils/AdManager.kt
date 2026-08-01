@@ -3,6 +3,7 @@ package com.onurkolofficial.spsgame.utils
 import android.content.Context
 import android.util.Log
 import com.onurkolofficial.spsgame.data.GamePreferences
+import com.onurkolofficial.spsgame.BuildConfig
 import com.startapp.sdk.adsbase.StartAppAd
 import com.startapp.sdk.adsbase.StartAppSDK
 
@@ -15,7 +16,7 @@ class AdManager(private val context: Context, private val prefs: GamePreferences
             StartAppSDK.init(context, GameAppConfig.STARTIO_APP_ID, false)
             // Disable startapp splash / return ads
             StartAppSDK.enableReturnAds(false)
-            StartAppSDK.setTestAdsEnabled(true)
+            StartAppSDK.setTestAdsEnabled(BuildConfig.DEBUG)
             startAppAd = StartAppAd(context)
         } catch (e: Exception) {
             Log.e("AdManager", "Failed to initialize Start.io SDK", e)

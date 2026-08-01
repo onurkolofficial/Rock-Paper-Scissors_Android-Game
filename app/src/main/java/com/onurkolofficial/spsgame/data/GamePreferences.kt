@@ -33,7 +33,12 @@ class GamePreferences(context: Context) {
         private const val KEY_OWNED_SKINS = "sps_owned_skins"
         private const val KEY_ACTIVE_SKIN = "sps_active_skin"
         private const val KEY_USER_CHANGED_NAME = "sps_user_changed_name"
+        private const val KEY_LAST_SEEN_UPDATE_VERSION = "sps_last_seen_update_version"
     }
+
+    var lastSeenUpdateDialogVersion: String
+        get() = prefs.getString(KEY_LAST_SEEN_UPDATE_VERSION, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_LAST_SEEN_UPDATE_VERSION, value).apply()
 
     var userName: String
         get() = prefs.getString(KEY_USER_NAME, "Guest") ?: "Guest"

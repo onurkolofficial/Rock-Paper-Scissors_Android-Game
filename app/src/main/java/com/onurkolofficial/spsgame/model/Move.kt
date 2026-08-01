@@ -5,8 +5,19 @@ enum class Move {
 
     fun toId(): String = this.name.lowercase()
 
+    fun getNameRes(): Int {
+        return when (this) {
+            ROCK -> com.onurkolofficial.spsgame.R.string.game_rock
+            PAPER -> com.onurkolofficial.spsgame.R.string.game_paper
+            SCISSORS -> com.onurkolofficial.spsgame.R.string.game_scissors
+            IRON -> com.onurkolofficial.spsgame.R.string.game_iron
+            ICE -> com.onurkolofficial.spsgame.R.string.game_ice
+            STEEL -> com.onurkolofficial.spsgame.R.string.game_steel
+        }
+    }
+
     companion object {
-        fun fromId(id: String?): Move {
+        fun fromId(id: String?): Move? {
             return when (id?.lowercase()) {
                 "rock" -> ROCK
                 "paper" -> PAPER
@@ -14,7 +25,7 @@ enum class Move {
                 "iron" -> IRON
                 "ice" -> ICE
                 "steel" -> STEEL
-                else -> ROCK
+                else -> null
             }
         }
     }

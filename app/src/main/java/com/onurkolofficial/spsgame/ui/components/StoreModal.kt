@@ -441,7 +441,7 @@ fun StoreModal(
         // Alert Modal
         alertMessage?.let { msg ->
             AlertModal(
-                title = stringResource(id = R.string.login_error_title),
+                title = stringResource(id = R.string.shop_error_title),
                 message = msg,
                 onDismiss = { alertMessage = null }
             )

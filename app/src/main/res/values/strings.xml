@@ -6,6 +6,7 @@
     <string name="menu_two_player">Play Two Player</string>
     <string name="menu_online_multiplayer">Play Online (BETA)</string>
     <string name="online_connecting">Connecting to server...</string>
+    <string name="online_connecting_short">Connecting...</string>
     <string name="online_waiting">Waiting for player...</string>
     <string name="online_title">ONLINE</string>
     <string name="online_players_count">Online</string>
@@ -132,6 +133,7 @@
     <string name="ach_t9_title">Product</string>
     <string name="ach_t9_desc">Use an item purchased from the shop.</string>
     <string name="shop_title">GAME SHOP</string>
+    <string name="shop_error_title">INSUFFICIENT BALANCE</string>
     <string name="game_shop">Shop</string>
     <string name="shop_tab_skins">SKINS</string>
     <string name="shop_tab_items">SPECIAL ITEMS</string>
@@ -170,4 +172,18 @@
     <string name="settings_drive_button">DRIVE SYNC</string>
     <string name="open_play_games_leaderboard">Open Play Games Leaderboard</string>
     <string name="tap_to_sign_in">Tap to sign in</string>
+    <string name="online_next_round">Next Round in %1$ds...</string>
+    <string name="online_opponent_disconnected">OPPONENT DISCONNECTED</string>
+    <string name="online_you_won">YOU WON!</string>
+    <string name="online_match_completed">MATCH COMPLETED</string>
+    <string name="online_rematch">NEW MATCH</string>
+    <string name="online_back_to_menu">BACK TO MENU</string>
+    <string name="online_error_title">ERROR</string>
+    <string name="online_opponent_default">Opponent</string>
+    <string name="online_exit_confirm">Are you sure you want to quit the game? Your active match will count as a loss.</string>
+    <string name="game_round">Round %1$d/10</string>
+    <string name="game_draws_label">Draws: %1$d</string>
+    <string name="update_dialog_title">NEW VERSION: %1$s</string>
+    <string name="update_dialog_features">• Game Core Updated: It is no longer web-based; it is now a core update compatible directly with the system.\n• Online Multiplayer: Play with players from all over the world!\n• Special Skins: Customize your hand looks from the shop. Your profiles will now be visible in online mode as well.\n• Special Items: Buy and use Iron, Ice, and Steel to defeat your opponents.\n• Play Games Sync: Your progress will be automatically saved using Google Play Games Snapshot.\n• UI Improvements: Smoother animations and beautiful layouts.</string>
+    <string name="update_dialog_close">Let\'s Play</string>
 </resources>

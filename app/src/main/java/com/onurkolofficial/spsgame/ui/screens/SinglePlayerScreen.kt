@@ -258,7 +258,7 @@ fun SinglePlayerScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text("SCORE", color = Color(0xFF10B981), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(id = R.string.score_label), color = Color(0xFF10B981), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Text("${playerScore * 100}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -275,28 +275,58 @@ fun SinglePlayerScreen(
                 // Wins / Draws / Losses Panel (Right)
                 Box(
                     modifier = Modifier
-                        .weight(1.2f)
+                        .weight(1.4f)
                         .background(Color(0xFF141517), RoundedCornerShape(16.dp))
                         .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("WINS", color = Color(0xFF10B981), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.game_wins).toAppUppercase(),
+                                color = Color(0xFF10B981),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                             Text("$playerScore", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
                         }
                         Box(modifier = Modifier.width(1.dp).height(16.dp).background(Color.White.copy(alpha = 0.15f)))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("DRAWS", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.game_draws).toAppUppercase(),
+                                color = Color.Gray,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                             Text("$sessionDraws", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
                         }
                         Box(modifier = Modifier.width(1.dp).height(16.dp).background(Color.White.copy(alpha = 0.15f)))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("LOSSES", color = Color(0xFFEF4444), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Column(
+                            modifier = Modifier.weight(1.2f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.game_losses).toAppUppercase(),
+                                color = Color(0xFFEF4444),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                             Text("$computerScore", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
                         }
                     }
@@ -526,7 +556,7 @@ fun MoveSelectionCard(
             )
             
             Text(
-                text = move.name.toAppUppercase(),
+                text = stringResource(id = move.getNameRes()).toAppUppercase(),
                 color = Color.White.copy(alpha = if (enabled) 1f else 0.3f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black

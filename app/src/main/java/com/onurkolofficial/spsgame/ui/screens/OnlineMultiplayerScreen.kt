@@ -3,6 +3,8 @@ package com.onurkolofficial.spsgame.ui.screens
 import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import android.util.Log
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,7 +46,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 enum class MultiplayerMode { SELECTION, MATCHMAKING, CREATE_ROOM, JOIN_ROOM, CONNECTING, IN_GAME }
-enum class MatchStatus { CONNECTING, WAITING, STARTING, PLAYING, RESULT, GAME_OVER, OPPONENT_DISCONNECTED }
+enum class MatchStatus { CONNECTING, WAITING, STARTING, LOADING, PLAYING, RESULT, GAME_OVER, OPPONENT_DISCONNECTED }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +74,8 @@ fun OnlineMultiplayerScreen(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var showConfirmExit by remember { mutableStateOf(false) }
     
-    var opponentName by remember { mutableStateOf("Opponent") }
+    val defaultOpponentName = stringResource(id = R.string.online_opponent_default)
+    var opponentName by remember(defaultOpponentName) { mutableStateOf(defaultOpponentName) }
     var currentRound by remember { mutableIntStateOf(1) }
     var totalDraws by remember { mutableIntStateOf(0) }
     
@@ -88,6 +91,25 @@ fun OnlineMultiplayerScreen(
     var nextRoundTimerVal by remember { mutableStateOf<Int?>(null) }
     var startingTimerVal by remember { mutableStateOf<Int?>(null) }
     
+    var loadingProgress by remember { mutableStateOf(0f) }
+    val animatedLoadingProgress by animateFloatAsState(
+        targetValue = loadingProgress,
+        animationSpec = tween(durationMillis = 2000)
+    )
+
+    val msgVisuals = stringResource(id = R.string.loading_visuals)
+    val msgSounds = stringResource(id = R.string.loading_sounds)
+    val msgEffects = stringResource(id = R.string.loading_effects)
+    val msgResources = stringResource(id = R.string.loading_resources)
+    val msgServer = stringResource(id = R.string.loading_server)
+    val msgRoom = stringResource(id = R.string.loading_rooms)
+    val msgGameLoading = stringResource(id = R.string.loading_game)
+    val msgGameStarting = stringResource(id = R.string.loading_start)
+
+    val loadingMessages = remember(msgVisuals, msgSounds, msgEffects, msgResources, msgServer, msgRoom, msgGameStarting) {
+        listOf(msgVisuals, msgSounds, msgEffects, msgResources, msgServer, msgRoom, msgGameStarting)
+    }
+    
     val activeSkin = remember { SKINS_LIST.find { it.id == prefs.activeSkin } ?: SKINS_LIST[0] }
     var opponentSkinId by remember { mutableStateOf("default") }
     val opponentSkin = remember(opponentSkinId) { SKINS_LIST.find { it.id == opponentSkinId } ?: SKINS_LIST[0] }
@@ -98,7 +120,7 @@ fun OnlineMultiplayerScreen(
     }
 
     val handleBackPress = {
-        if (matchStatus == MatchStatus.STARTING) {
+        if (matchStatus == MatchStatus.STARTING || matchStatus == MatchStatus.LOADING) {
             // Do nothing during GameLoadingScreen
         } else if (gameMode == MultiplayerMode.IN_GAME && matchStatus != MatchStatus.GAME_OVER) {
             showConfirmExit = true
@@ -192,9 +214,8 @@ fun OnlineMultiplayerScreen(
             
             s.on("game_starting") {
                 activity.runOnUiThread {
-                    matchStatus = MatchStatus.PLAYING
+                    matchStatus = MatchStatus.LOADING
                     gameMode = MultiplayerMode.IN_GAME
-                    timerVal = 10 // 10s round timer
                 }
             }
             
@@ -341,6 +362,17 @@ fun OnlineMultiplayerScreen(
         }
     }
 
+    LaunchedEffect(matchStatus) {
+        if (matchStatus == MatchStatus.LOADING) {
+            loadingProgress = 1f
+            delay(2000)
+            matchStatus = MatchStatus.PLAYING
+            timerVal = 8 // Sync with server's 10s round timer (10 - 2s loading time)
+        } else {
+            loadingProgress = 0f
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             // Register a loss if client disconnects early in game
@@ -356,7 +388,7 @@ fun OnlineMultiplayerScreen(
 
     if (showConfirmExit) {
         ConfirmModal(
-            message = "Oyundan çıkmak istediğinize emin misiniz? Devam eden maçınız kayıp olarak sayılacaktır.",
+            message = stringResource(id = R.string.online_exit_confirm),
             onConfirm = {
                 showConfirmExit = false
                 handleDisconnect()
@@ -428,7 +460,7 @@ fun OnlineMultiplayerScreen(
                                     .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = "Round $currentRound/10",
+                                    text = stringResource(id = R.string.game_round, currentRound),
                                     color = Color(0xFF3B82F6),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
@@ -440,7 +472,7 @@ fun OnlineMultiplayerScreen(
                                 modifier = Modifier.padding(top = 2.dp)
                             ) {
                                 Text(
-                                    text = "Draws: $totalDraws",
+                                    text = stringResource(id = R.string.game_draws_label, totalDraws),
                                     color = Color.White.copy(alpha = 0.3f),
                                     fontSize = 11.sp
                                 )
@@ -492,18 +524,18 @@ fun OnlineMultiplayerScreen(
                     // Hand Card
                     Box(
                         modifier = Modifier
-                            .size(100.dp)
+                            .size(120.dp)
                             .clip(RoundedCornerShape(20.dp))
                             .background(Color.White.copy(alpha = 0.03f))
                             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (matchStatus == MatchStatus.RESULT && opponentMove != null) {
-                            HandImage(move = opponentMove!!, skin = opponentSkin, modifier = Modifier.size(60.dp))
+                            HandImage(move = opponentMove!!, skin = opponentSkin, modifier = Modifier.size(68.dp), fontSize = 40.sp)
                         } else if (matchStatus == MatchStatus.PLAYING && opponentMove != null) {
-                            Text(text = "✓", color = Color.Green, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "✓", color = Color.Green, fontSize = 36.sp, fontWeight = FontWeight.Bold)
                         } else {
-                            Text(text = "?", color = Color.White.copy(alpha = 0.1f), fontSize = 36.sp)
+                            Text(text = "?", color = Color.White.copy(alpha = 0.1f), fontSize = 40.sp)
                         }
                     }
 
@@ -537,16 +569,16 @@ fun OnlineMultiplayerScreen(
                     // Hand Card
                     Box(
                         modifier = Modifier
-                            .size(100.dp)
+                            .size(120.dp)
                             .clip(RoundedCornerShape(20.dp))
                             .background(Color.White.copy(alpha = 0.03f))
                             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (myMove != null) {
-                            HandImage(move = myMove!!, skin = activeSkin, modifier = Modifier.size(60.dp))
+                            HandImage(move = myMove!!, skin = activeSkin, modifier = Modifier.size(68.dp), fontSize = 40.sp)
                         } else {
-                            Text(text = "?", color = Color.White.copy(alpha = 0.1f), fontSize = 36.sp)
+                            Text(text = "?", color = Color.White.copy(alpha = 0.1f), fontSize = 40.sp)
                         }
                     }
 
@@ -824,6 +856,54 @@ fun OnlineMultiplayerScreen(
             }
         }
 
+        // Overlay 2.5: Game Loading Screen
+        if (matchStatus == MatchStatus.LOADING) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0F1112)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    val currentMessageIndex = (animatedLoadingProgress * loadingMessages.size).toInt().coerceAtMost(loadingMessages.size - 1)
+                    val currentMessage = loadingMessages[currentMessageIndex]
+
+                    Text(
+                        text = msgGameLoading.toAppUppercase(),
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Text(
+                        text = currentMessage,
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    LinearProgressIndicator(
+                        progress = { animatedLoadingProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = Color(0xFF3B82F6),
+                        trackColor = Color.White.copy(alpha = 0.1f)
+                    )
+                }
+            }
+        }
+
         // Overlay 3: Round Results
         if (matchStatus == MatchStatus.RESULT && roundResult != null) {
             Box(
@@ -860,7 +940,7 @@ fun OnlineMultiplayerScreen(
 
                     nextRoundTimerVal?.let { t ->
                         Text(
-                            text = "Next Round in $t...",
+                            text = stringResource(id = R.string.online_next_round, t),
                             color = Color.White.copy(alpha = 0.5f),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
@@ -886,7 +966,7 @@ fun OnlineMultiplayerScreen(
                 ) {
                     if (matchStatus == MatchStatus.OPPONENT_DISCONNECTED) {
                         Text(
-                            text = "RAKİP OYUNDAN AYRILDI",
+                            text = stringResource(id = R.string.online_opponent_disconnected).toAppUppercase(),
                             color = Color.Red,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Black,
@@ -895,7 +975,7 @@ fun OnlineMultiplayerScreen(
                         )
                         if (finalResult == GameResult.WIN) {
                             Text(
-                                text = "KAZANDINIZ!",
+                                text = stringResource(id = R.string.online_you_won).toAppUppercase(),
                                 color = Color.Green,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
@@ -914,7 +994,7 @@ fun OnlineMultiplayerScreen(
                         }
                         
                         Text(
-                            text = "MAÇ TAMAMLANDI",
+                            text = stringResource(id = R.string.online_match_completed).toAppUppercase(),
                             color = Color.White.copy(alpha = 0.4f),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -956,7 +1036,7 @@ fun OnlineMultiplayerScreen(
                         ) {
                             Icon(imageVector = Icons.Default.Refresh, contentDescription = "Rematch", tint = Color.White)
                             Text(
-                                text = "YENİ EŞLEŞME",
+                                text = stringResource(id = R.string.online_rematch).toAppUppercase(),
                                 color = Color.White,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Black
@@ -975,7 +1055,7 @@ fun OnlineMultiplayerScreen(
                         modifier = Modifier.fillMaxWidth().height(56.dp)
                     ) {
                         Text(
-                            text = "MENÜYE DÖN",
+                            text = stringResource(id = R.string.online_back_to_menu).toAppUppercase(),
                             color = Color.White,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
@@ -988,7 +1068,7 @@ fun OnlineMultiplayerScreen(
         // Alert message Dialog
         errorMsg?.let { msg ->
             AlertModal(
-                title = "HATA",
+                title = stringResource(id = R.string.online_error_title).toAppUppercase(),
                 message = msg,
                 onDismiss = { errorMsg = null }
             )

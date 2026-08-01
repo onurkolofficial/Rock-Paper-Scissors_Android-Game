@@ -339,6 +339,46 @@ fun SettingsScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // About Game Box
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White.copy(alpha = 0.02f), RoundedCornerShape(16.dp))
+                        .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.settings_about).toAppUppercase(),
+                        color = Color.White.copy(alpha = 0.4f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "ROCK PAPER SCISSORS GAME",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${stringResource(id = R.string.about_developer)} Onur Kol",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${stringResource(id = R.string.about_version)} ${com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME}",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 12.sp
+                    )
+                }
+
                 // Removed Google Drive Backup Box
             }
         }

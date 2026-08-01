@@ -185,7 +185,7 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    oHistory.forEach { outcome ->
+                    oHistory.reversed().forEach { outcome ->
                         val badgeColor = when (outcome) {
                             "win" -> Color.Green
                             "lose" -> Color.Red

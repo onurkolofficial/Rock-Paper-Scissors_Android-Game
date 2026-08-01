@@ -30,7 +30,7 @@ fun StatsScreen(
     vibrationManager: VibrationManager,
     onNavigateBack: () -> Unit
 ) {
-    var showConfirmReset by remember { mutableStateOf(false) }
+
 
     var wins by remember { mutableStateOf(prefs.statsWins) }
     var losses by remember { mutableStateOf(prefs.statsLosses) }
@@ -51,27 +51,7 @@ fun StatsScreen(
         }
     }
 
-    if (showConfirmReset) {
-        ConfirmModal(
-            message = "Tüm istatistiklerinizi ve ilerlemenizi sıfırlamak istediğinize emin misiniz?",
-            onConfirm = {
-                vibrationManager.vibrateClick()
-                soundManager.playClick()
-                prefs.clearStats()
-                
-                wins = prefs.statsWins
-                losses = prefs.statsLosses
-                draws = prefs.statsDraws
-                oWins = prefs.statsOnlineWins
-                oLosses = prefs.statsOnlineLosses
-                oDraws = prefs.statsOnlineDraws
-                oHistory = prefs.onlineHistory
-                
-                showConfirmReset = false
-            },
-            onCancel = { showConfirmReset = false }
-        )
-    }
+
 
     Box(
         modifier = Modifier
@@ -231,7 +211,7 @@ fun StatsScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            oHistory.forEach { outcome ->
+                            oHistory.reversed().forEach { outcome ->
                                 val badgeColor = when (outcome) {
                                     "win" -> Color.Green
                                     "lose" -> Color.Red
@@ -258,25 +238,7 @@ fun StatsScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
 
-                // Reset Stats Button
-                Button(
-                    onClick = { showConfirmReset = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f)),
-                    shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red.copy(alpha = 0.3f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) {
-                    Text(
-                        text = "İSTATİSTİKLERİ SIFIRLA",
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                }
             }
         }
     }
