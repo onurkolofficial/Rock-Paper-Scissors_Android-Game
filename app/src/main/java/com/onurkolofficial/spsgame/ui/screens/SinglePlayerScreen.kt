@@ -1,6 +1,7 @@
 package com.onurkolofficial.spsgame.ui.screens
 import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,6 +56,11 @@ fun SinglePlayerScreen(
     val coroutineScope = rememberCoroutineScope()
     var showConfirmExit by remember { mutableStateOf(false) }
     var showStore by remember { mutableStateOf(false) }
+
+    BackHandler {
+        soundManager.playClick()
+        showConfirmExit = true
+    }
 
     var playerScore by remember { mutableIntStateOf(0) }
     var computerScore by remember { mutableIntStateOf(0) }

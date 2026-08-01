@@ -44,6 +44,7 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
     }
 
     private var isInitialized = false
+    private var isCloudDataLoaded = false
 
     init {
         if (prefs.userName != "Guest") {
@@ -76,7 +77,7 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
                                 val name = player.displayName
                                 val pic = player.iconImageUri?.toString() ?: ""
                                 // Load cloud save data on successful login
-                                loadGame {
+                                loadGame(force = true) {
                                     onResult(true, name, pic)
                                 }
                             } else {
@@ -131,7 +132,7 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
                     val name = player.displayName
                     val pic = player.iconImageUri?.toString() ?: ""
                     // Load cloud save data on successful silent sign in profile fetch
-                    loadGame {
+                    loadGame(force = false) {
                         onResult(true, name, pic)
                     }
                 } else {
@@ -147,6 +148,7 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
     fun signOut(onResult: (success: Boolean) -> Unit) {
         try {
             prefs.userName = "Guest"
+            isCloudDataLoaded = false
             onResult(true)
         } catch (e: Exception) {
             Log.e(TAG, "Error during local sign out", e)
@@ -206,8 +208,13 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
         }
     }
 
-    fun loadGame(onComplete: (Boolean) -> Unit = {}) {
+    fun loadGame(force: Boolean = false, onComplete: (Boolean) -> Unit = {}) {
         ensureInitialized()
+        if (isCloudDataLoaded && !force) {
+            Log.d(TAG, "Cloud save already loaded this session. Skipping.")
+            onComplete(true)
+            return
+        }
         try {
             PlayGames.getGamesSignInClient(activity).isAuthenticated.addOnSuccessListener { authResult ->
                 if (authResult.isAuthenticated) {
@@ -237,12 +244,16 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
                                                 prefs.ownedSkins = data.ownedSkins
                                                 prefs.activeSkin = data.activeSkin
                                                 Log.d(TAG, "Cloud save loaded and applied successfully")
+                                                isCloudDataLoaded = true
                                                 onComplete(true)
                                                 return@addOnCompleteListener
                                             }
                                         } catch (e: Exception) {
                                             Log.e(TAG, "Error parsing cloud save JSON", e)
                                         }
+                                    } else {
+                                        // If snapshot file is empty, consider cloud loaded successfully (first time initialization)
+                                        isCloudDataLoaded = true
                                     }
                                 }
                             }

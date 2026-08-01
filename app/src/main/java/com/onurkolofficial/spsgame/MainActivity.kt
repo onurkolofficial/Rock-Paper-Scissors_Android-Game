@@ -209,6 +209,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         soundManager.stopBgm()
+        playGamesManager.saveGame()
     }
 
     override fun onDestroy() {

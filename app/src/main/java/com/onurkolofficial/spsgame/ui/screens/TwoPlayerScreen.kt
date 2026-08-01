@@ -1,6 +1,7 @@
 package com.onurkolofficial.spsgame.ui.screens
 import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,6 +42,11 @@ fun TwoPlayerScreen(
     onNavigateBack: () -> Unit
 ) {
     var showConfirmExit by remember { mutableStateOf(false) }
+
+    BackHandler {
+        soundManager.playClick()
+        showConfirmExit = true
+    }
 
     var p1Score by remember { mutableIntStateOf(0) }
     var p2Score by remember { mutableIntStateOf(0) }
