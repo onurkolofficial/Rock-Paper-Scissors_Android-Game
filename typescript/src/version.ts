@@ -1,0 +1,3 @@
+const VERSION_CODE = "27"
+const VERSION_NAME = "3.4.3"
+export const GAME_VERSION = VERSION_NAME + '.' + VERSION_CODE;
