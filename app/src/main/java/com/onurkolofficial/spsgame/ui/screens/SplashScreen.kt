@@ -21,11 +21,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import com.onurkolofficial.spsgame.R
 
 @Composable
 fun SplashScreen(
@@ -35,9 +37,9 @@ fun SplashScreen(
 
     LaunchedEffect(Unit) {
         visible = false
-        delay(250.milliseconds) // Wait for fade out animation
+        delay(400.milliseconds) // Wait for fade out animation
         visible = true
-        delay(2400.milliseconds) // stay visible for 2.5 seconds
+        delay(2800.milliseconds) // stay visible for 2.5 seconds
         visible = false
         delay(800.milliseconds) // Wait for fade out animation
         onNavigateToMenu()
@@ -68,7 +70,7 @@ fun SplashScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = "Rock Paper Scissors",
+                        text = stringResource(id = R.string.app_name),
                         color = Color.White,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Black,

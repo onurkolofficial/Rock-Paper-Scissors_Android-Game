@@ -1,4 +1,5 @@
 package com.onurkolofficial.spsgame.ui.components
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -37,7 +38,7 @@ fun AlertModal(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = title.uppercase(),
+                    text = title.toAppUppercase(),
                     color = Color(0xFFFF4D4D),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Black,
@@ -76,3 +77,4 @@ fun AlertModal(
         }
     }
 }
+

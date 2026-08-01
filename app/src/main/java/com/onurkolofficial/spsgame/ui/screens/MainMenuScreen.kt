@@ -1,4 +1,5 @@
 package com.onurkolofficial.spsgame.ui.screens
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
@@ -96,6 +97,7 @@ fun MainMenuScreen(
         StoreModal(
             prefs = prefs,
             soundManager = soundManager,
+            playGamesManager = playGamesManager,
             onClose = { showStore = false },
             onRefreshCash = { statsCash = prefs.statsCash }
         )
@@ -192,7 +194,7 @@ fun MainMenuScreen(
 
             // Game Logo / Title
             Text(
-                text = stringResource(id = R.string.app_name).uppercase(),
+                text = stringResource(id = R.string.app_name).toAppUppercase(),
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Black,
@@ -202,7 +204,7 @@ fun MainMenuScreen(
             )
             
             Text(
-                text = "KOTLIN NATIVE EDITION",
+                text = "NEW NATIVE EDITION",
                 color = Color(0xFFFFD700),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -234,7 +236,7 @@ fun MainMenuScreen(
                 ) {
                     Text(text = "🛒", fontSize = 15.sp)
                     Text(
-                        text = stringResource(id = R.string.game_shop).uppercase(),
+                        text = stringResource(id = R.string.game_shop).toAppUppercase(),
                         color = Color(0xFFFFD700),
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
@@ -274,9 +276,9 @@ fun MainMenuScreen(
                 }
 
                 val onlinePlayersText = if (onlinePlayers != null) {
-                    "● $onlinePlayers ${stringResource(id = R.string.online_players_count).uppercase()}"
+                    "● $onlinePlayers ${stringResource(id = R.string.online_players_count).toAppUppercase()}"
                 } else {
-                    "● ... ${stringResource(id = R.string.online_players_count).uppercase()}"
+                    "● ... ${stringResource(id = R.string.online_players_count).toAppUppercase()}"
                 }
 
                 MenuButton(
@@ -380,7 +382,7 @@ fun MenuButton(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = text.uppercase(),
+                    text = text.toAppUppercase(),
                     color = textColor,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Black,
@@ -428,3 +430,4 @@ fun BottomIconButton(
         )
     }
 }
+

@@ -1,5 +1,6 @@
 package com.onurkolofficial.spsgame.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -25,6 +26,9 @@ fun GameLoadingScreen(
     targetMode: String,
     onNavigateNext: () -> Unit
 ) {
+    // Disable back button while loading
+    BackHandler { }
+    
     var progress by remember { mutableFloatStateOf(0f) }
     
     val animatedProgress by animateFloatAsState(

@@ -1,4 +1,5 @@
-package com.onurkolofficial.spsgame.ui.screens
+package com.onurkolofficial.spsgame.ui.screens
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import android.app.Activity
 import android.util.Log
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +39,7 @@ import com.onurkolofficial.spsgame.ui.components.SKINS_LIST
 import com.onurkolofficial.spsgame.ui.components.Skin
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
+import com.onurkolofficial.spsgame.utils.PlayGamesManager
 import io.socket.client.IO
 import io.socket.client.Socket
 import kotlinx.coroutines.delay
@@ -52,6 +55,7 @@ fun OnlineMultiplayerScreen(
     prefs: GamePreferences,
     soundManager: SoundManager,
     vibrationManager: VibrationManager,
+    playGamesManager: PlayGamesManager,
     onNavigateBack: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -92,6 +96,27 @@ fun OnlineMultiplayerScreen(
     val handleDisconnect = {
         socket?.disconnect()
         socket = null
+    }
+
+    val handleBackPress = {
+        if (matchStatus == MatchStatus.STARTING) {
+            // Do nothing during GameLoadingScreen
+        } else if (gameMode == MultiplayerMode.IN_GAME && matchStatus != MatchStatus.GAME_OVER) {
+            showConfirmExit = true
+        } else if (gameMode != MultiplayerMode.SELECTION && gameMode != MultiplayerMode.IN_GAME) {
+            soundManager.playClick()
+            handleDisconnect()
+            gameMode = MultiplayerMode.SELECTION
+        } else {
+            soundManager.playClick()
+            handleDisconnect()
+            playGamesManager.saveGame()
+            onNavigateBack()
+        }
+    }
+
+    BackHandler {
+        handleBackPress()
     }
 
     val connectAndEmit = { event: String, data: JSONObject ->
@@ -232,6 +257,8 @@ fun OnlineMultiplayerScreen(
                     val historyList = prefs.onlineHistory.toMutableList()
                     historyList.add(0, finalOutcome?.toId() ?: "draw")
                     prefs.onlineHistory = historyList.take(5)
+                    
+                    playGamesManager.saveGame()
                 }
             }
             
@@ -246,6 +273,8 @@ fun OnlineMultiplayerScreen(
                         val historyList = prefs.onlineHistory.toMutableList()
                         historyList.add(0, "win")
                         prefs.onlineHistory = historyList.take(5)
+                        
+                        playGamesManager.saveGame()
                     }
                 }
             }
@@ -461,7 +490,7 @@ fun OnlineMultiplayerScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = opponentName.uppercase(),
+                        text = opponentName.toAppUppercase(),
                         color = Color.White.copy(alpha = 0.3f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -533,7 +562,7 @@ fun OnlineMultiplayerScreen(
                         }
                     } else {
                         Text(
-                            text = prefs.userName.uppercase(),
+                            text = prefs.userName.toAppUppercase(),
                             color = Color.White.copy(alpha = 0.3f),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -558,10 +587,7 @@ fun OnlineMultiplayerScreen(
             ) {
                 // Exit Back
                 IconButton(
-                    onClick = {
-                        soundManager.playClick()
-                        onNavigateBack()
-                    },
+                    onClick = { handleBackPress() },
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .clip(RoundedCornerShape(12.dp))
@@ -655,7 +681,7 @@ fun OnlineMultiplayerScreen(
 
                             OutlinedTextField(
                                 value = roomCodeInput,
-                                onValueChange = { roomCodeInput = it.take(6).uppercase() },
+                                onValueChange = { roomCodeInput = it.take(6).toAppUppercase() },
                                 placeholder = {
                                     Text(
                                         text = stringResource(id = R.string.online_room_code_placeholder),
@@ -681,7 +707,7 @@ fun OnlineMultiplayerScreen(
                                 modifier = Modifier.fillMaxWidth().height(56.dp)
                             ) {
                                 Text(
-                                    text = stringResource(id = R.string.online_join_button).uppercase(),
+                                    text = stringResource(id = R.string.online_join_button).toAppUppercase(),
                                     color = Color(0xFF0F1112),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Black
@@ -727,7 +753,7 @@ fun OnlineMultiplayerScreen(
                                         .padding(24.dp)
                                 ) {
                                     Text(
-                                        text = stringResource(id = R.string.online_room_code_label).uppercase(),
+                                        text = stringResource(id = R.string.online_room_code_label).toAppUppercase(),
                                         color = Color.White.copy(alpha = 0.4f),
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold
@@ -768,7 +794,7 @@ fun OnlineMultiplayerScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = stringResource(id = R.string.online_player_joined).uppercase(),
+                        text = stringResource(id = R.string.online_player_joined).toAppUppercase(),
                         color = Color.Green,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
@@ -818,7 +844,7 @@ fun OnlineMultiplayerScreen(
                     }
 
                     Text(
-                        text = outcomeText.uppercase(),
+                        text = outcomeText.toAppUppercase(),
                         color = outcomeColor,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Black,
@@ -889,7 +915,7 @@ fun OnlineMultiplayerScreen(
                         )
 
                         Text(
-                            text = overText.uppercase(),
+                            text = overText.toAppUppercase(),
                             color = overColor,
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Black,
@@ -962,3 +988,4 @@ fun OnlineMultiplayerScreen(
         }
     }
 }
+

@@ -41,6 +41,8 @@
     <string name="settings_player_name_placeholder">Enter your name</string>
     <string name="settings_sound">Sound</string>
     <string name="settings_volume">Volume Level</string>
+    <string name="settings_music_volume">Music Volume</string>
+    <string name="settings_sfx_volume">Sound Effects Volume</string>
     <string name="settings_vibration">Vibration</string>
     <string name="settings_ads_interstitial">Show Interstitial Ads</string>
     <string name="settings_language">Language</string>
@@ -58,6 +60,8 @@
     <string name="game_losses">Losses</string>
     <string name="about_developer">Developer:</string>
     <string name="about_version">Version:</string>
+    <string name="profile_title">Profile</string>
+    <string name="profile_switch">Switch Profile</string>
     
     <string name="loading_game">GAME LOADING...</string>
     <string name="loading_visuals">Loading visuals...</string>
@@ -86,6 +90,9 @@
     <string name="game_player_1_wins">Player 1 Wins!</string>
     <string name="game_player_2_wins">Player 2 Wins!</string>
     <string name="game_score">Score</string>
+    <string name="game_timeout">TIMEOUT: %1$d</string>
+    <string name="game_next_round_auto">NEXT IN %1$d</string>
+    <string name="game_make_choices">MAKE YOUR CHOICES</string>
     <string name="game_back_confirm">Are you sure you want to quit the game?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>

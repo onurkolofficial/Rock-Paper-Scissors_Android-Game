@@ -92,8 +92,7 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = "game_loading" 
                                 },
                                 onNavigateToOnlineMultiplayer = { 
-                                    targetGameScreen = "online"
-                                    currentScreen = "game_loading" 
+                                    currentScreen = "online" 
                                 },
                                 onNavigateToSettings = { currentScreen = "settings" },
                                 onNavigateToStats = { currentScreen = "stats" },
@@ -134,6 +133,7 @@ class MainActivity : ComponentActivity() {
                                 prefs = prefs,
                                 soundManager = soundManager,
                                 vibrationManager = vibrationManager,
+                                playGamesManager = playGamesManager,
                                 onNavigateBack = { currentScreen = "menu" }
                             )
                         }

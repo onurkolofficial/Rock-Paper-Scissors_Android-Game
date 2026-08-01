@@ -19,7 +19,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.onurkolofficial.spsgame.R
 import com.onurkolofficial.spsgame.data.GamePreferences
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
@@ -61,35 +64,57 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = {
-                        soundManager.playClick()
-                        vibrationManager.vibrateClick()
-                        onNavigateBack()
-                    },
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.05f))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
+                    IconButton(
+                        onClick = {
+                            soundManager.playClick()
+                            vibrationManager.vibrateClick()
+                            onNavigateBack()
+                        },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.05f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = stringResource(id = R.string.profile_title).toAppUppercase(),
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Text(
-                    text = "PROFİL",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp
-                )
+                // Switch Profile Button
+                TextButton(
+                    onClick = {
+                        soundManager.playClick()
+                        vibrationManager.vibrateClick()
+                        playGamesManager.getCompareProfileIntent { intent ->
+                            profileLauncher.launch(intent)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFFD700))
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.profile_switch).toAppUppercase(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -113,7 +138,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = userName.uppercase(),
+                text = userName.toAppUppercase(),
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black
@@ -127,45 +152,62 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    soundManager.playClick()
-                    vibrationManager.vibrateClick()
-                    playGamesManager.getCompareProfileIntent { intent ->
-                        profileLauncher.launch(intent)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(50.dp),
-                shape = RoundedCornerShape(25.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.1f)
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Profil Değiştir",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             // Stats
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatCard(title = "GALİBİYET", value = prefs.statsWins.toString())
-                StatCard(title = "MAĞLUBİYET", value = prefs.statsLosses.toString())
+                StatCard(title = stringResource(id = R.string.stats_wins).toAppUppercase(), value = prefs.statsOnlineWins.toString())
+                StatCard(title = stringResource(id = R.string.stats_losses).toAppUppercase(), value = prefs.statsOnlineLosses.toString())
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Recent Matches Card
+            val oHistory = prefs.onlineHistory
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White.copy(alpha = 0.02f), RoundedCornerShape(20.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.stats_recent_matches).toAppUppercase(),
+                    color = Color.White.copy(alpha = 0.4f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    oHistory.forEach { outcome ->
+                        val badgeColor = when (outcome) {
+                            "win" -> Color.Green
+                            "lose" -> Color.Red
+                            else -> Color.White.copy(alpha = 0.6f)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(36.dp)
+                                .background(badgeColor.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .border(1.dp, badgeColor.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = outcome.toAppUppercase(),
+                                color = badgeColor,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -195,3 +237,4 @@ fun StatCard(title: String, value: String) {
         )
     }
 }
+

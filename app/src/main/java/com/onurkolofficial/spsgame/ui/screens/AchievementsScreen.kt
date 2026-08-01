@@ -1,4 +1,5 @@
 package com.onurkolofficial.spsgame.ui.screens
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,9 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +48,42 @@ val ACHIEVEMENTS_LIST = listOf(
     LocalAchievement("t9", R.string.ach_t9_title, R.string.ach_t9_desc, "🎒")
 )
 
+enum class AchievementFilter { ALL, REMAINING, COMPLETED }
+
+fun isAchievementUnlocked(id: String, prefs: GamePreferences): Boolean {
+    return when (id) {
+        "t1" -> prefs.statsWins >= 6
+        "t2" -> prefs.statsWins >= 5
+        "t3" -> prefs.statsWins >= 3
+        "t4" -> prefs.statsDraws >= 10
+        "t5" -> prefs.statsWins >= 5
+        "t6" -> prefs.statsWins >= 10
+        "t7" -> true
+        "t8" -> prefs.ownedSkins.size > 1 || prefs.ironCount > 0 || prefs.iceCount > 0 || prefs.steelCount > 0
+        "t9" -> prefs.ironCount < 5 && prefs.ownedSkins.size > 1
+        else -> false
+    }
+}
+
+@Composable
+fun AchFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (isSelected) Color(0xFFFFD700) else Color.White.copy(alpha = 0.05f))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = if (isSelected) Color(0xFF0F1112) else Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
 @Composable
 fun AchievementsScreen(
     prefs: GamePreferences,
@@ -52,6 +92,16 @@ fun AchievementsScreen(
     playGamesManager: PlayGamesManager,
     onNavigateBack: () -> Unit
 ) {
+    var currentFilter by remember { mutableStateOf(AchievementFilter.ALL) }
+    val filteredList = ACHIEVEMENTS_LIST.filter { ach ->
+        val unlocked = isAchievementUnlocked(ach.id, prefs)
+        when (currentFilter) {
+            AchievementFilter.ALL -> true
+            AchievementFilter.COMPLETED -> unlocked
+            AchievementFilter.REMAINING -> !unlocked
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -81,7 +131,7 @@ fun AchievementsScreen(
                         .background(Color.White.copy(alpha = 0.05f))
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = Color.White
                     )
@@ -90,15 +140,56 @@ fun AchievementsScreen(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Text(
-                    text = stringResource(id = R.string.achievements).uppercase(),
+                    text = stringResource(id = R.string.achievements).toAppUppercase(),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp
                 )
+                
+                Spacer(modifier = Modifier.weight(1f))
+                
+                IconButton(
+                    onClick = {
+                        vibrationManager.vibrateClick()
+                        soundManager.playClick()
+                        playGamesManager.showAchievements()
+                    },
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFFFD700).copy(alpha = 0.1f))
+                        .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = "Play Games",
+                        tint = Color(0xFFFFD700)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
+            
+            // Filters
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                AchFilterChip(text = "Hepsi", isSelected = currentFilter == AchievementFilter.ALL) {
+                    currentFilter = AchievementFilter.ALL
+                    soundManager.playClick()
+                }
+                AchFilterChip(text = "Kalanlar", isSelected = currentFilter == AchievementFilter.REMAINING) {
+                    currentFilter = AchievementFilter.REMAINING
+                    soundManager.playClick()
+                }
+                AchFilterChip(text = "Tamamlanmış", isSelected = currentFilter == AchievementFilter.COMPLETED) {
+                    currentFilter = AchievementFilter.COMPLETED
+                    soundManager.playClick()
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
 
             // lazy column list
             LazyColumn(
@@ -107,19 +198,8 @@ fun AchievementsScreen(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(ACHIEVEMENTS_LIST) { ach ->
-                    val isUnlocked = when (ach.id) {
-                        "t1" -> prefs.statsWins >= 6
-                        "t2" -> prefs.statsWins >= 5
-                        "t3" -> prefs.statsWins >= 3
-                        "t4" -> prefs.statsDraws >= 10
-                        "t5" -> prefs.statsWins >= 5
-                        "t6" -> prefs.statsWins >= 10
-                        "t7" -> true
-                        "t8" -> prefs.ownedSkins.size > 1 || prefs.ironCount > 0 || prefs.iceCount > 0 || prefs.steelCount > 0
-                        "t9" -> prefs.ironCount < 5 && prefs.ownedSkins.size > 1
-                        else -> false
-                    }
+                items(filteredList) { ach ->
+                    val isUnlocked = isAchievementUnlocked(ach.id, prefs)
 
                     Row(
                         modifier = Modifier
@@ -185,28 +265,7 @@ fun AchievementsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
-                    playGamesManager.showAchievements()
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-            ) {
-                Text(
-                    text = stringResource(id = R.string.show_play_games_achievements).uppercase(),
-                    color = Color(0xFF0F1112),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.5.sp
-                )
-            }
         }
     }
 }
+

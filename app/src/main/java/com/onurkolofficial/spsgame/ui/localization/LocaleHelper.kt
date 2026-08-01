@@ -18,3 +18,9 @@ object LocaleHelper {
         return context.createConfigurationContext(configuration)
     }
 }
+
+fun String.toAppUppercase(): String {
+    val locale = Locale.getDefault()
+    val finalLocale = if (locale.language == "tr") Locale("tr", "TR") else locale
+    return this.uppercase(finalLocale)
+}

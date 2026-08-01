@@ -54,7 +54,7 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
 
     private fun playSound(soundId: Int) {
         if (!prefs.soundEnabled || soundId == -1) return
-        val vol = prefs.volume
+        val vol = prefs.sfxVolume
         soundPool?.play(soundId, vol, vol, 1, 0, 1.0f)
     }
 
@@ -67,7 +67,7 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
                 }
             }
             bgmPlayer?.let { player ->
-                val vol = prefs.volume
+                val vol = prefs.musicVolume
                 player.setVolume(vol, vol)
                 if (!player.isPlaying) {
                     player.start()
@@ -98,7 +98,7 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
             return
         }
         bgmPlayer?.let { player ->
-            val vol = prefs.volume
+            val vol = prefs.musicVolume
             player.setVolume(vol, vol)
             if (!player.isPlaying) {
                 player.start()

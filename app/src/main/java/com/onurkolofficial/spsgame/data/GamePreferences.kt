@@ -21,6 +21,8 @@ class GamePreferences(context: Context) {
         private const val KEY_STATS_ONLINE_HISTORY = "sps_stats_online_history"
         private const val KEY_SOUND = "sps_sound"
         private const val KEY_VOLUME = "sps_volume"
+        private const val KEY_MUSIC_VOLUME = "sps_music_volume"
+        private const val KEY_SFX_VOLUME = "sps_sfx_volume"
         private const val KEY_VIBRATION = "sps_vibration"
         private const val KEY_ADS_INTERSTITIAL = "sps_ads_interstitial"
         private const val KEY_LANG = "sps_lang"
@@ -72,6 +74,14 @@ class GamePreferences(context: Context) {
     var volume: Float
         get() = prefs.getFloat(KEY_VOLUME, 1.0f)
         set(value) = prefs.edit().putFloat(KEY_VOLUME, value).apply()
+
+    var musicVolume: Float
+        get() = prefs.getFloat(KEY_MUSIC_VOLUME, 1.0f)
+        set(value) = prefs.edit().putFloat(KEY_MUSIC_VOLUME, value).apply()
+
+    var sfxVolume: Float
+        get() = prefs.getFloat(KEY_SFX_VOLUME, 1.0f)
+        set(value) = prefs.edit().putFloat(KEY_SFX_VOLUME, value).apply()
 
     var vibrationEnabled: Boolean
         get() = prefs.getBoolean(KEY_VIBRATION, true)
@@ -164,6 +174,8 @@ class GamePreferences(context: Context) {
                 KEY_STATS_ONLINE_HISTORY -> editor.putString(key, value) // is already json string
                 KEY_SOUND -> editor.putBoolean(key, value.toBoolean())
                 KEY_VOLUME -> editor.putFloat(key, value.toFloatOrNull() ?: 1.0f)
+                KEY_MUSIC_VOLUME -> editor.putFloat(key, value.toFloatOrNull() ?: 1.0f)
+                KEY_SFX_VOLUME -> editor.putFloat(key, value.toFloatOrNull() ?: 1.0f)
                 KEY_VIBRATION -> editor.putBoolean(key, value.toBoolean())
                 KEY_ADS_INTERSTITIAL -> editor.putBoolean(key, value.toBoolean())
                 KEY_LANG -> editor.putString(key, value)

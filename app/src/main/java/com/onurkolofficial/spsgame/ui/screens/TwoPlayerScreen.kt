@@ -1,4 +1,5 @@
 package com.onurkolofficial.spsgame.ui.screens
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,6 +30,7 @@ import com.onurkolofficial.spsgame.ui.components.SKINS_LIST
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
+import kotlinx.coroutines.delay
 
 @Composable
 fun TwoPlayerScreen(
@@ -48,11 +50,95 @@ fun TwoPlayerScreen(
     var gameFinished by remember { mutableStateOf(false) }
     var resultText by remember { mutableStateOf("") }
     var resultColor by remember { mutableStateOf(Color.White) }
+    
+    var timerVal by remember { mutableStateOf<Int?>(null) }
+    var nextRoundTimerVal by remember { mutableStateOf<Int?>(null) }
 
     val activeSkin = remember { SKINS_LIST.find { it.id == prefs.activeSkin } ?: SKINS_LIST[0] }
 
     LaunchedEffect(Unit) {
-        playGamesManager.unlockAchievement("CgkIua-BqqENEAIQBw")
+        playGamesManager.unlockAchievement(com.onurkolofficial.spsgame.utils.PlayGamesConstants.ACH_T7_FUN)
+    }
+
+    val getOutcomeP1 = {
+        val m1 = p1Move
+        val m2 = p2Move
+        if (m1 != null && m2 != null) {
+            GameEngine.determineWinner(m1, m2)
+        } else if (m1 != null && m2 == null) {
+            GameResult.WIN
+        } else if (m2 != null && m1 == null) {
+            GameResult.LOSE
+        } else {
+            GameResult.DRAW
+        }
+    }
+
+    val getOutcomeP2 = {
+        val m1 = p1Move
+        val m2 = p2Move
+        if (m1 != null && m2 != null) {
+            val res = GameEngine.determineWinner(m1, m2)
+            when (res) {
+                GameResult.WIN -> GameResult.LOSE
+                GameResult.LOSE -> GameResult.WIN
+                else -> GameResult.DRAW
+            }
+        } else if (m2 != null && m1 == null) {
+            GameResult.WIN
+        } else if (m1 != null && m2 == null) {
+            GameResult.LOSE
+        } else {
+            GameResult.DRAW
+        }
+    }
+
+    // Choice timeout timer (starts when exactly one player has made a choice)
+    LaunchedEffect(p1Move, p2Move) {
+        if ((p1Move != null && p2Move == null) || (p2Move != null && p1Move == null)) {
+            timerVal = 1
+            while (timerVal!! > 0) {
+                delay(1000)
+                timerVal = timerVal!! - 1
+            }
+            // Timer expired, resolve the game based on who made a choice
+            if (p1Move != null && p2Move == null) {
+                p1Score++
+                resultText = "Player 1 Wins!"
+                resultColor = Color.Green
+                soundManager.playWin()
+                vibrationManager.vibrateSuccess()
+            } else if (p2Move != null && p1Move == null) {
+                p2Score++
+                resultText = "Player 2 Wins!"
+                resultColor = Color.Green
+                soundManager.playWin()
+                vibrationManager.vibrateSuccess()
+            }
+            gameFinished = true
+            timerVal = null
+        } else {
+            timerVal = null
+        }
+    }
+
+    // Auto next round transition (3 seconds after game finishes)
+    LaunchedEffect(gameFinished) {
+        if (gameFinished) {
+            nextRoundTimerVal = 3
+            while (nextRoundTimerVal!! > 0) {
+                delay(1000)
+                nextRoundTimerVal = nextRoundTimerVal!! - 1
+            }
+            // Auto transition
+            p1Move = null
+            p2Move = null
+            gameFinished = false
+            resultText = ""
+            nextRoundTimerVal = null
+        } else {
+            nextRoundTimerVal = null
+        }
     }
 
     val evaluateRound = {
@@ -138,30 +224,58 @@ fun TwoPlayerScreen(
                     )
                 }
 
+
+
+                if (gameFinished) {
+                    val p2Outcome = getOutcomeP2()
+                    val p2Text = when (p2Outcome) {
+                        GameResult.WIN -> stringResource(id = R.string.game_win)
+                        GameResult.LOSE -> stringResource(id = R.string.game_lose)
+                        else -> stringResource(id = R.string.game_draw)
+                    }
+                    val p2Color = when (p2Outcome) {
+                        GameResult.WIN -> Color.Green
+                        GameResult.LOSE -> Color.Red
+                        else -> Color.White
+                    }
+                    Text(
+                        text = p2Text.toAppUppercase(),
+                        color = p2Color,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    )
+                }
+
                 Box(
                     modifier = Modifier
-                        .size(100.dp)
+                        .size(120.dp)
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.White.copy(alpha = 0.03f))
                         .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (gameFinished && p2Move != null) {
-                        HandImage(move = p2Move!!, skin = activeSkin, modifier = Modifier.size(60.dp))
+                    if (gameFinished) {
+                        if (p2Move != null) {
+                            HandImage(move = p2Move!!, skin = activeSkin, modifier = Modifier.size(80.dp), fontSize = 48.sp)
+                        } else {
+                            Text(text = "❌", color = Color.Red, fontSize = 48.sp, fontWeight = FontWeight.Bold)
+                        }
                     } else if (p2Move != null) {
-                        Text(text = "✓", color = Color.Green, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "✓", color = Color.Green, fontSize = 48.sp, fontWeight = FontWeight.Bold)
                     } else {
-                        Text(text = "?", color = Color.White.copy(alpha = 0.2f), fontSize = 36.sp)
+                        Text(text = "❓", color = Color.White.copy(alpha = 0.2f), fontSize = 48.sp)
                     }
                 }
 
                 if (!gameFinished) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         listOf(Move.ROCK, Move.PAPER, Move.SCISSORS).forEach { move ->
-                            MoveCard(move = move, skin = activeSkin, isSelected = p2Move == move) {
+                            TwoPlayerMoveCard(move = move, skin = activeSkin, isSelected = p2Move == move, enabled = p2Move == null) {
                                 if (p2Move == null) {
                                     vibrationManager.vibrateClick()
                                     soundManager.playClick()
@@ -172,7 +286,7 @@ fun TwoPlayerScreen(
                         }
                     }
                 } else {
-                    Spacer(modifier = Modifier.height(50.dp))
+                    Spacer(modifier = Modifier.height(96.dp))
                 }
             }
         }
@@ -204,45 +318,23 @@ fun TwoPlayerScreen(
                 )
             }
 
-            if (gameFinished) {
-                Text(
-                    text = resultText.uppercase(),
-                    color = resultColor,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 16.sp,
-                    letterSpacing = 1.sp
-                )
-
-                Button(
-                    onClick = {
-                        soundManager.playClick()
-                        p1Move = null
-                        p2Move = null
-                        gameFinished = false
-                        resultText = ""
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    modifier = Modifier.height(32.dp)
-                ) {
-                    Text(
-                        text = "NEXT",
-                        color = Color(0xFF0F1112),
-                        fontWeight = FontWeight.Black,
-                        fontSize = 11.sp
-                    )
-                }
+            val centerText = if (gameFinished) {
+                val sec = nextRoundTimerVal ?: 3
+                stringResource(id = R.string.game_next_round_auto, sec)
+            } else if (timerVal != null) {
+                stringResource(id = R.string.game_timeout, timerVal!!)
             } else {
-                Text(
-                    text = "MAKE YOUR CHOICES",
-                    color = Color.White.copy(alpha = 0.4f),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.size(36.dp))
+                stringResource(id = R.string.game_make_choices)
             }
+
+            Text(
+                text = centerText.toAppUppercase(),
+                color = if (timerVal != null) Color.Red else Color.White.copy(alpha = 0.4f),
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                letterSpacing = 1.sp
+            )
+            Spacer(modifier = Modifier.size(36.dp))
         }
 
         // Player 1 Area (Bottom, Normal)
@@ -258,43 +350,6 @@ fun TwoPlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                if (!gameFinished) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        listOf(Move.ROCK, Move.PAPER, Move.SCISSORS).forEach { move ->
-                            MoveCard(move = move, skin = activeSkin, isSelected = p1Move == move) {
-                                if (p1Move == null) {
-                                    vibrationManager.vibrateClick()
-                                    soundManager.playClick()
-                                    p1Move = move
-                                    evaluateRound()
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Spacer(modifier = Modifier.height(50.dp))
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color.White.copy(alpha = 0.03f))
-                        .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (gameFinished && p1Move != null) {
-                        HandImage(move = p1Move!!, skin = activeSkin, modifier = Modifier.size(60.dp))
-                    } else if (p1Move != null) {
-                        Text(text = "✓", color = Color.Green, fontSize = 36.sp, fontWeight = FontWeight.Bold)
-                    } else {
-                        Text(text = "?", color = Color.White.copy(alpha = 0.2f), fontSize = 36.sp)
-                    }
-                }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -313,7 +368,121 @@ fun TwoPlayerScreen(
                         fontSize = 14.sp
                     )
                 }
+
+
+
+                if (gameFinished) {
+                    val p1Outcome = getOutcomeP1()
+                    val p1Text = when (p1Outcome) {
+                        GameResult.WIN -> stringResource(id = R.string.game_win)
+                        GameResult.LOSE -> stringResource(id = R.string.game_lose)
+                        else -> stringResource(id = R.string.game_draw)
+                    }
+                    val p1Color = when (p1Outcome) {
+                        GameResult.WIN -> Color.Green
+                        GameResult.LOSE -> Color.Red
+                        else -> Color.White
+                    }
+                    Text(
+                        text = p1Text.toAppUppercase(),
+                        color = p1Color,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White.copy(alpha = 0.03f))
+                        .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (gameFinished) {
+                        if (p1Move != null) {
+                            HandImage(move = p1Move!!, skin = activeSkin, modifier = Modifier.size(80.dp), fontSize = 48.sp)
+                        } else {
+                            Text(text = "❌", color = Color.Red, fontSize = 48.sp, fontWeight = FontWeight.Bold)
+                        }
+                    } else if (p1Move != null) {
+                        Text(text = "✓", color = Color.Green, fontSize = 48.sp, fontWeight = FontWeight.Bold)
+                    } else {
+                        Text(text = "❓", color = Color.White.copy(alpha = 0.2f), fontSize = 48.sp)
+                    }
+                }
+
+                if (!gameFinished) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf(Move.ROCK, Move.PAPER, Move.SCISSORS).forEach { move ->
+                            TwoPlayerMoveCard(move = move, skin = activeSkin, isSelected = p1Move == move, enabled = p1Move == null) {
+                                if (p1Move == null) {
+                                    vibrationManager.vibrateClick()
+                                    soundManager.playClick()
+                                    p1Move = move
+                                    evaluateRound()
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Spacer(modifier = Modifier.height(96.dp))
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun TwoPlayerMoveCard(
+    move: Move,
+    skin: Skin,
+    isSelected: Boolean,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .width(94.dp)
+            .height(96.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                if (isSelected) Color(0xFFFFD700).copy(alpha = 0.15f)
+                else Color.White.copy(alpha = if (enabled) 0.05f else 0.02f)
+            )
+            .border(
+                1.dp,
+                if (isSelected) Color(0xFFFFD700)
+                else Color.White.copy(alpha = if (enabled) 0.1f else 0.03f),
+                RoundedCornerShape(24.dp)
+            )
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            HandImage(
+                move = move,
+                skin = skin,
+                modifier = Modifier
+                    .size(42.dp)
+                    .padding(bottom = 6.dp),
+                fontSize = 24.sp
+            )
+            
+            Text(
+                text = move.name.toAppUppercase(),
+                color = Color.White.copy(alpha = if (enabled) 1f else 0.3f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black
+            )
         }
     }
 }
@@ -343,3 +512,4 @@ fun MoveCard(
         HandImage(move = move, skin = skin, modifier = Modifier.size(32.dp))
     }
 }
+

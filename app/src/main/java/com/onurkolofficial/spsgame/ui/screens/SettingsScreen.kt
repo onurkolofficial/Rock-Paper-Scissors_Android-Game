@@ -1,4 +1,5 @@
 package com.onurkolofficial.spsgame.ui.screens
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import android.app.Activity
 import android.content.Intent
@@ -44,9 +45,9 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
 
-    var nameInput by remember { mutableStateOf(prefs.userName) }
     var soundEnabled by remember { mutableStateOf(prefs.soundEnabled) }
-    var volume by remember { mutableStateOf(prefs.volume) }
+    var musicVolume by remember { mutableStateOf(prefs.musicVolume) }
+    var sfxVolume by remember { mutableStateOf(prefs.sfxVolume) }
     var vibrationEnabled by remember { mutableStateOf(prefs.vibrationEnabled) }
     var adsEnabled by remember { mutableStateOf(prefs.adsInterstitialEnabled) }
     var lang by remember { mutableStateOf(prefs.language) }
@@ -84,10 +85,6 @@ fun SettingsScreen(
                 IconButton(
                     onClick = {
                         soundManager.playClick()
-                        // Save name change
-                        if (nameInput.isNotBlank()) {
-                            prefs.userName = nameInput
-                        }
                         onNavigateBack()
                     },
                     modifier = Modifier
@@ -104,7 +101,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Text(
-                    text = stringResource(id = R.string.settings_title).uppercase(),
+                    text = stringResource(id = R.string.settings_title).toAppUppercase(),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
@@ -121,37 +118,6 @@ fun SettingsScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Name Input Box
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White.copy(alpha = 0.02f), RoundedCornerShape(16.dp))
-                        .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.settings_player_name).uppercase(),
-                        color = Color.White.copy(alpha = 0.4f),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { nameInput = it },
-                        placeholder = { Text(text = stringResource(id = R.string.settings_player_name_placeholder)) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFFFFD700),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                }
-
                 // Toggles & Sliders Box
                 Column(
                     modifier = Modifier
@@ -192,14 +158,60 @@ fun SettingsScreen(
                         CustomToggle(checked = soundEnabled)
                     }
 
-                    // Volume Slider
+                    // Music & SFX Volume Sliders
                     if (soundEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.settings_music_volume),
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 12.sp
+                            )
+                            Text(
+                                text = "${(musicVolume * 100).toInt()}%",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 12.sp
+                            )
+                        }
                         Slider(
-                            value = volume,
+                            value = musicVolume,
                             onValueChange = {
-                                prefs.volume = it
-                                volume = it
+                                prefs.musicVolume = it
+                                musicVolume = it
                                 soundManager.updateBgmVolume()
+                            },
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color(0xFFFFD700),
+                                activeTrackColor = Color.White,
+                                inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.settings_sfx_volume),
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 12.sp
+                            )
+                            Text(
+                                text = "${(sfxVolume * 100).toInt()}%",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 12.sp
+                            )
+                        }
+                        Slider(
+                            value = sfxVolume,
+                            onValueChange = {
+                                prefs.sfxVolume = it
+                                sfxVolume = it
                             },
                             colors = SliderDefaults.colors(
                                 thumbColor = Color(0xFFFFD700),
@@ -270,7 +282,7 @@ fun SettingsScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = stringResource(id = R.string.settings_language).uppercase(),
+                        text = stringResource(id = R.string.settings_language).toAppUppercase(),
                         color = Color.White.copy(alpha = 0.4f),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -358,3 +370,4 @@ fun CustomToggle(
         )
     }
 }
+

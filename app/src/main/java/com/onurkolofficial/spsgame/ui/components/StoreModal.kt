@@ -1,4 +1,5 @@
 package com.onurkolofficial.spsgame.ui.components
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,6 +34,7 @@ import androidx.compose.ui.window.Dialog
 import com.onurkolofficial.spsgame.R
 import com.onurkolofficial.spsgame.data.GamePreferences
 import com.onurkolofficial.spsgame.utils.SoundManager
+import com.onurkolofficial.spsgame.utils.PlayGamesManager
 
 data class Skin(
     val id: String,
@@ -74,6 +76,7 @@ val CONSUMABLES_LIST = listOf(
 fun StoreModal(
     prefs: GamePreferences,
     soundManager: SoundManager,
+    playGamesManager: PlayGamesManager,
     onClose: () -> Unit,
     onRefreshCash: () -> Unit
 ) {
@@ -86,6 +89,7 @@ fun StoreModal(
     var alertMessage by remember { mutableStateOf<String?>(null) }
 
     BackHandler {
+        playGamesManager.saveGame()
         onClose()
     }
 
@@ -112,6 +116,7 @@ fun StoreModal(
                     IconButton(
                         onClick = {
                             soundManager.playClick()
+                            playGamesManager.saveGame()
                             onClose()
                         },
                         modifier = Modifier
@@ -272,6 +277,8 @@ fun StoreModal(
                                             soundManager.playClick()
                                             prefs.activeSkin = skin.id
                                             activeSkinId = skin.id
+                                            onRefreshCash()
+                                            playGamesManager.saveGame()
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
                                         shape = RoundedCornerShape(10.dp),
@@ -296,6 +303,7 @@ fun StoreModal(
                                                 prefs.ownedSkins = newOwned
                                                 ownedSkins = newOwned
                                                 onRefreshCash()
+                                                playGamesManager.saveGame()
                                             } else {
                                                 alertMessage = context.getString(R.string.shop_insufficient_cash)
                                             }
@@ -457,7 +465,7 @@ fun StoreModal(
                     ) {
                         // Header
                         Text(
-                            text = stringResource(id = item.nameResId).uppercase(),
+                            text = stringResource(id = item.nameResId).toAppUppercase(),
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Black,
@@ -524,6 +532,7 @@ fun StoreModal(
                                     }
                                     selectedItem = null
                                     onRefreshCash()
+                                    playGamesManager.saveGame()
                                 } else {
                                     alertMessage = context.getString(R.string.shop_insufficient_cash)
                                 }
@@ -550,7 +559,7 @@ fun StoreModal(
 }
 
 @Composable
-fun SkinIcon(skin: Skin, type: String, modifier: Modifier = Modifier) {
+fun SkinIcon(skin: Skin, type: String, modifier: Modifier = Modifier, fontSize: androidx.compose.ui.unit.TextUnit? = null) {
     if (skin.id == "default" || skin.id == "biker") {
         val drawableId = when (skin.id) {
             "default" -> when (type) {
@@ -582,7 +591,7 @@ fun SkinIcon(skin: Skin, type: String, modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = emoji,
-                fontSize = if (modifier == Modifier.size(16.dp)) 12.sp else 24.sp,
+                fontSize = fontSize ?: (if (modifier == Modifier.size(16.dp)) 12.sp else 24.sp),
                 textAlign = TextAlign.Center
             )
         }
@@ -618,3 +627,4 @@ fun TabButton(
         )
     }
 }
+

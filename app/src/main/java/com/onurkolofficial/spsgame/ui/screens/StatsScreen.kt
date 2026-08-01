@@ -1,4 +1,5 @@
 package com.onurkolofficial.spsgame.ui.screens
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -110,7 +111,7 @@ fun StatsScreen(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Text(
-                    text = stringResource(id = R.string.stats_title).uppercase(),
+                    text = stringResource(id = R.string.stats_title).toAppUppercase(),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
@@ -135,7 +136,7 @@ fun StatsScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = stringResource(id = R.string.stats_tab_single).uppercase(),
+                        text = stringResource(id = R.string.stats_tab_single).toAppUppercase(),
                         color = Color(0xFFFFD700),
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
@@ -176,7 +177,7 @@ fun StatsScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = stringResource(id = R.string.stats_tab_online).uppercase(),
+                        text = stringResource(id = R.string.stats_tab_online).toAppUppercase(),
                         color = Color(0xFF3B82F6),
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
@@ -218,7 +219,7 @@ fun StatsScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = stringResource(id = R.string.stats_recent_matches).uppercase(),
+                            text = stringResource(id = R.string.stats_recent_matches).toAppUppercase(),
                             color = Color.White.copy(alpha = 0.4f),
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
@@ -245,7 +246,7 @@ fun StatsScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = outcome.uppercase(),
+                                        text = outcome.toAppUppercase(),
                                         color = badgeColor,
                                         fontWeight = FontWeight.Black,
                                         fontSize = 10.sp,
@@ -284,8 +285,9 @@ fun StatsScreen(
 @Composable
 fun StatItem(label: String, value: String, valueColor: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = label.uppercase(), color = Color.White.copy(alpha = 0.3f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text(text = label.toAppUppercase(), color = Color.White.copy(alpha = 0.3f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = value, color = valueColor, fontSize = 24.sp, fontWeight = FontWeight.Black)
     }
 }
+
