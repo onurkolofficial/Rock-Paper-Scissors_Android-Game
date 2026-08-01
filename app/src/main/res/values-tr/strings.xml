@@ -6,7 +6,7 @@
     <string name="menu_two_player">İki Kişilik Oyna</string>
     <string name="menu_online_multiplayer">Çevrim İçi Oyna (BETA)</string>
     <string name="online_connecting">Sunucuya bağlanıyor...</string>
-    <string name="online_waiting">Eşleşme bekleniyor...</string>
+    <string name="online_waiting">Oyuncu bekleniyor...</string>
     <string name="online_title">ÇEVRİMİÇİ</string>
     <string name="online_players_count">Çevrimiçi</string>
     <string name="online_matchmaking">Eşleşmeli Oyun</string>

@@ -12,7 +12,7 @@ class AdManager(private val context: Context, private val prefs: GamePreferences
     init {
         try {
             // App ID is "209638589"
-            StartAppSDK.init(context, "209638589", false)
+            StartAppSDK.init(context, GameAppConfig.STARTIO_APP_ID, false)
             // Disable startapp splash / return ads
             StartAppSDK.enableReturnAds(false)
             StartAppSDK.setTestAdsEnabled(true)

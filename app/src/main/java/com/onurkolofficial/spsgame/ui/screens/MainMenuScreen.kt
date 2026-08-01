@@ -25,6 +25,7 @@ import com.onurkolofficial.spsgame.R
 import com.onurkolofficial.spsgame.data.GamePreferences
 import com.startapp.sdk.adsbase.model.AdPreferences
 import com.onurkolofficial.spsgame.ui.components.StoreModal
+import com.onurkolofficial.spsgame.utils.GameAppConfig
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
@@ -62,7 +63,7 @@ fun MainMenuScreen(
     }
 
     DisposableEffect(Unit) {
-        val socketUrl = "https://ais-pre-krvzfwmorvyucwdfnc2p6j-731883338395.europe-west2.run.app"
+        val socketUrl = GameAppConfig.SOCKET_URL
         var socket: Socket? = null
         try {
             val opts = IO.Options().apply {

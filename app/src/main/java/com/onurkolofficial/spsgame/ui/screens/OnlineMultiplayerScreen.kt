@@ -1,14 +1,13 @@
-package com.onurkolofficial.spsgame.ui.screens
+package com.onurkolofficial.spsgame.ui.screens
+
 import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
-import android.app.Activity
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -21,14 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.gson.Gson
 import com.onurkolofficial.spsgame.R
 import com.onurkolofficial.spsgame.data.GamePreferences
 import com.onurkolofficial.spsgame.model.GameResult
@@ -36,7 +33,7 @@ import com.onurkolofficial.spsgame.model.Move
 import com.onurkolofficial.spsgame.ui.components.AlertModal
 import com.onurkolofficial.spsgame.ui.components.ConfirmModal
 import com.onurkolofficial.spsgame.ui.components.SKINS_LIST
-import com.onurkolofficial.spsgame.ui.components.Skin
+import com.onurkolofficial.spsgame.utils.GameAppConfig
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
@@ -65,7 +62,7 @@ fun OnlineMultiplayerScreen(
         }
     }
     
-    val socketUrl = "https://ais-pre-krvzfwmorvyucwdfnc2p6j-731883338395.europe-west2.run.app"
+    val socketUrl = GameAppConfig.SOCKET_URL
     var socket by remember { mutableStateOf<Socket?>(null) }
     var gameMode by remember { mutableStateOf(MultiplayerMode.SELECTION) }
     var matchStatus by remember { mutableStateOf(MatchStatus.CONNECTING) }
@@ -92,6 +89,8 @@ fun OnlineMultiplayerScreen(
     var startingTimerVal by remember { mutableStateOf<Int?>(null) }
     
     val activeSkin = remember { SKINS_LIST.find { it.id == prefs.activeSkin } ?: SKINS_LIST[0] }
+    var opponentSkinId by remember { mutableStateOf("default") }
+    val opponentSkin = remember(opponentSkinId) { SKINS_LIST.find { it.id == opponentSkinId } ?: SKINS_LIST[0] }
 
     val handleDisconnect = {
         socket?.disconnect()
@@ -177,6 +176,7 @@ fun OnlineMultiplayerScreen(
                             val p = players.getJSONObject(i)
                             if (p.optString("id") != s.id()) {
                                 opponentName = p.optString("name")
+                                opponentSkinId = p.optString("skin", "default")
                             }
                         }
                     }
@@ -288,21 +288,21 @@ fun OnlineMultiplayerScreen(
     }
 
     val startMatchmaking = {
-        val data = JSONObject().put("name", prefs.userName)
+        val data = JSONObject().put("name", prefs.userName).put("skin", prefs.activeSkin)
         gameMode = MultiplayerMode.MATCHMAKING
         matchStatus = MatchStatus.CONNECTING
         connectAndEmit("join_matchmaking", data)
     }
 
     val createRoom = {
-        val data = JSONObject().put("name", prefs.userName)
+        val data = JSONObject().put("name", prefs.userName).put("skin", prefs.activeSkin)
         gameMode = MultiplayerMode.CREATE_ROOM
         matchStatus = MatchStatus.CONNECTING
         connectAndEmit("create_private_room", data)
     }
 
     val joinRoom = { code: String ->
-        val data = JSONObject().put("name", prefs.userName).put("roomId", code)
+        val data = JSONObject().put("name", prefs.userName).put("roomId", code).put("skin", prefs.activeSkin)
         gameMode = MultiplayerMode.CONNECTING
         matchStatus = MatchStatus.CONNECTING
         connectAndEmit("join_private_room", data)
@@ -378,7 +378,7 @@ fun OnlineMultiplayerScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
+                    .height(76.dp)
                     .background(Color.Black.copy(alpha = 0.4f))
                     .border(1.dp, Color.White.copy(alpha = 0.05f))
                     .padding(horizontal = 16.dp),
@@ -416,7 +416,7 @@ fun OnlineMultiplayerScreen(
                             text = opponentScore.toString(),
                             color = Color.White.copy(alpha = 0.6f),
                             fontWeight = FontWeight.Black,
-                            fontSize = 20.sp,
+                            fontSize = 24.sp,
                             modifier = Modifier.rotate(180f)
                         )
 
@@ -430,7 +430,7 @@ fun OnlineMultiplayerScreen(
                                 Text(
                                     text = "Round $currentRound/10",
                                     color = Color(0xFF3B82F6),
-                                    fontSize = 10.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -442,13 +442,13 @@ fun OnlineMultiplayerScreen(
                                 Text(
                                     text = "Draws: $totalDraws",
                                     color = Color.White.copy(alpha = 0.3f),
-                                    fontSize = 9.sp
+                                    fontSize = 11.sp
                                 )
                                 timerVal?.let { t ->
                                     Text(
                                         text = "⏳ ${t}s",
                                         color = Color.Red.copy(alpha = 0.8f),
-                                        fontSize = 9.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -459,7 +459,7 @@ fun OnlineMultiplayerScreen(
                             text = myScore.toString(),
                             color = Color.White,
                             fontWeight = FontWeight.Black,
-                            fontSize = 20.sp
+                            fontSize = 24.sp
                         )
                     }
                 } else {
@@ -486,17 +486,9 @@ fun OnlineMultiplayerScreen(
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = opponentName.toAppUppercase(),
-                        color = Color.White.copy(alpha = 0.3f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-
                     // Hand Card
                     Box(
                         modifier = Modifier
@@ -507,7 +499,7 @@ fun OnlineMultiplayerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (matchStatus == MatchStatus.RESULT && opponentMove != null) {
-                            HandImage(move = opponentMove!!, skin = activeSkin, modifier = Modifier.size(60.dp))
+                            HandImage(move = opponentMove!!, skin = opponentSkin, modifier = Modifier.size(60.dp))
                         } else if (matchStatus == MatchStatus.PLAYING && opponentMove != null) {
                             Text(text = "✓", color = Color.Green, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                         } else {
@@ -515,7 +507,17 @@ fun OnlineMultiplayerScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(48.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Opponent name (rendered straight and above the selection Box)
+                    Text(
+                        text = opponentName.toAppUppercase(),
+                        color = Color.White.copy(alpha = 0.3f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.rotate(180f)
+                    )
                 }
             }
 
@@ -551,11 +553,14 @@ fun OnlineMultiplayerScreen(
                     // Move Select buttons
                     if (matchStatus == MatchStatus.PLAYING && myMove == null) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             listOf(Move.ROCK, Move.PAPER, Move.SCISSORS).forEach { move ->
-                                MoveCard(move = move, skin = activeSkin, isSelected = false) {
+                                MoveSelectionCard(move = move, skin = activeSkin, enabled = true) {
                                     handleMoveSelection(move)
                                 }
                             }
@@ -736,9 +741,11 @@ fun OnlineMultiplayerScreen(
                             CircularProgressIndicator(color = Color(0xFF3B82F6))
                             
                             Text(
-                                text = if (gameMode == MultiplayerMode.CREATE_ROOM && roomId != null) 
-                                    stringResource(id = R.string.online_room_created) 
-                                    else stringResource(id = R.string.online_connecting),
+                                text = when {
+                                    gameMode == MultiplayerMode.CREATE_ROOM && roomId != null -> stringResource(id = R.string.online_room_created)
+                                    matchStatus == MatchStatus.WAITING -> stringResource(id = R.string.online_waiting)
+                                    else -> stringResource(id = R.string.online_connecting)
+                                },
                                 color = Color.White,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold

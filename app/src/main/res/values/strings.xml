@@ -6,7 +6,7 @@
     <string name="menu_two_player">Play Two Player</string>
     <string name="menu_online_multiplayer">Play Online (BETA)</string>
     <string name="online_connecting">Connecting to server...</string>
-    <string name="online_waiting">Waiting for matchmaking...</string>
+    <string name="online_waiting">Waiting for player...</string>
     <string name="online_title">ONLINE</string>
     <string name="online_players_count">Online</string>
     <string name="online_matchmaking">Matchmaking</string>
