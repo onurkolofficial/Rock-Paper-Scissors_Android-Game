@@ -42,7 +42,6 @@ class MainMenuViewModel(
 
     init {
         checkSilentSignIn()
-        fetchOnlinePlayersCount()
     }
 
     fun refreshProfile() {
@@ -75,10 +74,11 @@ class MainMenuViewModel(
         }
     }
 
-    private fun fetchOnlinePlayersCount() {
+    fun startListeningPlayerCount() {
+        if (socket != null && socket?.connected() == true) return
         try {
             val opts = IO.Options().apply {
-                forceNew = true
+                forceNew = false
                 reconnection = true
             }
             socket = IO.socket(GameAppConfig.SOCKET_URL, opts)
@@ -88,7 +88,7 @@ class MainMenuViewModel(
             socket?.on("player_count") { args ->
                 if (args.isNotEmpty()) {
                     val data = args[0] as? JSONObject
-                    val count = data?.optInt("count", 2) ?: 2
+                    val count = data?.optInt("count", 0) ?: 0
                     _uiState.update { it.copy(onlinePlayersCount = count) }
                 }
             }
@@ -98,13 +98,18 @@ class MainMenuViewModel(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
+    fun stopListeningPlayerCount() {
         try {
+            socket?.off()
             socket?.disconnect()
             socket = null
         } catch (e: Exception) {
-            // ignore
+            Log.e("MainMenuVM", "Error disconnecting socket", e)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopListeningPlayerCount()
     }
 }

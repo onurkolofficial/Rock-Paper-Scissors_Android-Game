@@ -47,6 +47,13 @@ fun MainMenuScreen(
         viewModel.refreshProfile()
     }
 
+    DisposableEffect(viewModel) {
+        viewModel.startListeningPlayerCount()
+        onDispose {
+            viewModel.stopListeningPlayerCount()
+        }
+    }
+
     if (uiState.showStore) {
         StoreModal(
             prefs = appContainer.prefs,

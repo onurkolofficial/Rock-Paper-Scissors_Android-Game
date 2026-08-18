@@ -36,8 +36,6 @@ interface Room {
 const rooms: Record<string, Room> = {};
 const playerRoomMap = new Map<string, string>(); // socketId -> roomId
 
-let onlinePlayerCount = 0;
-
 export type MoveType = 'rock' | 'paper' | 'scissors' | 'iron' | 'ice' | 'steel';
 
 export const getOutcome = (m1: string, m2: string): 'win' | 'lose' | 'draw' => {
@@ -199,13 +197,12 @@ const evaluateRound = (roomId: string, isTimeout: boolean = false) => {
 };
 
 io.on("connection", (socket: Socket) => {
-  console.log("Client connected:", socket.id);
+  console.log("Client connected:", socket.id, "Total connected:", io.sockets.sockets.size);
 
-  onlinePlayerCount++;
-  io.emit("player_count", { count: onlinePlayerCount });
+  io.emit("player_count", { count: io.sockets.sockets.size });
 
   socket.on("request_player_count", () => {
-    socket.emit("player_count", { count: onlinePlayerCount });
+    socket.emit("player_count", { count: io.sockets.sockets.size });
   });
 
   socket.on("join_matchmaking", (data: { name: string, skin?: string }) => {
@@ -353,9 +350,8 @@ io.on("connection", (socket: Socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-    onlinePlayerCount = Math.max(0, onlinePlayerCount - 1);
-    io.emit("player_count", { count: onlinePlayerCount });
+    console.log("Client disconnected:", socket.id, "Remaining:", io.sockets.sockets.size);
+    io.emit("player_count", { count: io.sockets.sockets.size });
     const roomId = playerRoomMap.get(socket.id);
     if (roomId) {
       const room = rooms[roomId];
