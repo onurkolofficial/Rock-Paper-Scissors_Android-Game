@@ -38,6 +38,8 @@ data class OnlineMultiplayerUiState(
     val opponentHasMoved: Boolean = false,
     val roundResult: GameResult? = null,
     val finalResult: GameResult? = null,
+    val isAbandonedWon: Boolean = false,
+    val isAbandonedVoid: Boolean = false,
     val myScore: Int = 0,
     val opponentScore: Int = 0,
     val timerVal: Int? = null,
@@ -340,20 +342,58 @@ class OnlineMultiplayerViewModel(
         s.on("opponent_disconnected") { args ->
             val res = args.getOrNull(0) as? JSONObject
             val wasPlaying = res?.optBoolean("wasPlaying", true) ?: true
+            val round = res?.optInt("round", _uiState.value.currentRound) ?: _uiState.value.currentRound
+
+            timerJob?.cancel()
+            startingTimerJob?.cancel()
+            nextRoundTimerJob?.cancel()
 
             if (wasPlaying && _uiState.value.matchStatus != MatchStatus.GAME_OVER) {
-                prefs.statsOnlineWins++
-                prefs.statsCash += 200
-                soundManager.playWin()
-                vibrationManager.vibrateSuccess()
-            }
+                if (round > 5) {
+                    // Over 5 rounds completed -> Award forfeit win
+                    prefs.statsOnlineWins++
+                    prefs.statsCash += 200
+                    soundManager.playWin()
+                    vibrationManager.vibrateSuccess()
+                    playGamesManager.submitScore(PlayGamesConstants.LEADERBOARD_WINS, prefs.statsOnlineWins.toLong())
+                    playGamesManager.saveGame()
 
-            _uiState.update {
-                it.copy(
-                    matchStatus = MatchStatus.OPPONENT_DISCONNECTED,
-                    timerVal = null,
-                    nextRoundTimerVal = null
-                )
+                    _uiState.update {
+                        it.copy(
+                            finalResult = GameResult.WIN,
+                            matchStatus = MatchStatus.OPPONENT_DISCONNECTED,
+                            isAbandonedWon = true,
+                            isAbandonedVoid = false,
+                            timerVal = null,
+                            nextRoundTimerVal = null
+                        )
+                    }
+                } else {
+                    // 5 or fewer rounds -> Match void, no win or loss recorded
+                    soundManager.playDraw()
+                    vibrationManager.vibrate(100)
+
+                    _uiState.update {
+                        it.copy(
+                            finalResult = null,
+                            matchStatus = MatchStatus.OPPONENT_DISCONNECTED,
+                            isAbandonedWon = false,
+                            isAbandonedVoid = true,
+                            timerVal = null,
+                            nextRoundTimerVal = null
+                        )
+                    }
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        matchStatus = MatchStatus.OPPONENT_DISCONNECTED,
+                        isAbandonedWon = false,
+                        isAbandonedVoid = true,
+                        timerVal = null,
+                        nextRoundTimerVal = null
+                    )
+                }
             }
         }
     }
@@ -395,6 +435,25 @@ class OnlineMultiplayerViewModel(
             }
             _uiState.update { it.copy(nextRoundTimerVal = null) }
         }
+    }
+
+    fun forfeitGame() {
+        val state = _uiState.value
+        val wasInGame = (state.gameMode == MultiplayerMode.IN_GAME || state.matchStatus == MatchStatus.PLAYING || state.matchStatus == MatchStatus.RESULT || state.matchStatus == MatchStatus.STARTING || state.matchStatus == MatchStatus.LOADING) && state.matchStatus != MatchStatus.GAME_OVER && state.matchStatus != MatchStatus.OPPONENT_DISCONNECTED
+
+        if (wasInGame) {
+            prefs.statsOnlineAbandons++
+            prefs.statsOnlineLosses++
+            playGamesManager.saveGame()
+        }
+
+        try {
+            socketManager.getSocket().emit("leave_game")
+        } catch (e: Exception) {
+            Log.e("OnlineMultiplayerVM", "Error emitting leave_game", e)
+        }
+
+        leaveMatchmakingOrGame()
     }
 
     fun leaveMatchmakingOrGame() {

@@ -159,6 +159,7 @@ fun ProfileScreen(
             ) {
                 StatCard(title = stringResource(id = R.string.stats_wins).toAppUppercase(), value = prefs.statsOnlineWins.toString())
                 StatCard(title = stringResource(id = R.string.stats_losses).toAppUppercase(), value = prefs.statsOnlineLosses.toString())
+                StatCard(title = stringResource(id = R.string.stats_online_abandons).toAppUppercase(), value = prefs.statsOnlineAbandons.toString())
             }
 
             Spacer(modifier = Modifier.height(32.dp))

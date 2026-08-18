@@ -186,4 +186,8 @@
     <string name="update_dialog_title">NEW VERSION: %1$s</string>
     <string name="update_dialog_features">• Game Core Updated: It is no longer web-based; it is now a core update compatible directly with the system.\n• Online Multiplayer: Play with players from all over the world!\n• Special Skins: Customize your hand looks from the shop. Your profiles will now be visible in online mode as well.\n• Special Items: Buy and use Iron, Ice, and Steel to defeat your opponents.\n• Play Games Sync: Your progress will be automatically saved using Google Play Games Snapshot.\n• UI Improvements: Smoother animations and beautiful layouts.</string>
     <string name="update_dialog_close">Let\'s Play</string>
+    <string name="stats_online_abandons">Abandons</string>
+    <string name="online_opponent_abandoned_won">Opponent left the match. Since more than 5 rounds were played, you won by forfeit!</string>
+    <string name="online_opponent_abandoned_void">Opponent left the match. Since 5 rounds were not reached, the match is void (no win/loss recorded).</string>
+    <string name="online_match_void">MATCH VOID</string>
 </resources>

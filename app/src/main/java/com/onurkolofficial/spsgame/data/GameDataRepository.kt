@@ -22,6 +22,7 @@ data class UserGameData(
     val statsOnlineWins: Int = 0,
     val statsOnlineDraws: Int = 0,
     val statsOnlineLosses: Int = 0,
+    val statsOnlineAbandons: Int = 0,
     val statsCash: Int = 0,
     val ironCount: Int = 0,
     val iceCount: Int = 0,
@@ -46,6 +47,7 @@ class GameDataRepository(private val context: Context) {
         val KEY_STATS_ONLINE_WINS = intPreferencesKey("sps_stats_online_wins")
         val KEY_STATS_ONLINE_DRAWS = intPreferencesKey("sps_stats_online_draws")
         val KEY_STATS_ONLINE_LOSSES = intPreferencesKey("sps_stats_online_losses")
+        val KEY_STATS_ONLINE_ABANDONS = intPreferencesKey("sps_stats_online_abandons")
         val KEY_STATS_CASH = intPreferencesKey("sps_stats_cash")
         val KEY_IRON_COUNT = intPreferencesKey("sps_iron_count")
         val KEY_ICE_COUNT = intPreferencesKey("sps_ice_count")
@@ -87,6 +89,7 @@ class GameDataRepository(private val context: Context) {
                 statsOnlineWins = preferences[KEY_STATS_ONLINE_WINS] ?: 0,
                 statsOnlineDraws = preferences[KEY_STATS_ONLINE_DRAWS] ?: 0,
                 statsOnlineLosses = preferences[KEY_STATS_ONLINE_LOSSES] ?: 0,
+                statsOnlineAbandons = preferences[KEY_STATS_ONLINE_ABANDONS] ?: 0,
                 statsCash = preferences[KEY_STATS_CASH] ?: 0,
                 ironCount = preferences[KEY_IRON_COUNT] ?: 0,
                 iceCount = preferences[KEY_ICE_COUNT] ?: 0,

@@ -349,26 +349,38 @@ io.on("connection", (socket: Socket) => {
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id, "Remaining:", io.sockets.sockets.size);
-    io.emit("player_count", { count: io.sockets.sockets.size });
-    const roomId = playerRoomMap.get(socket.id);
+  const handlePlayerLeaveRoom = (socketId: string) => {
+    const roomId = playerRoomMap.get(socketId);
     if (roomId) {
       const room = rooms[roomId];
       if (room) {
         if (room.roundTimeoutId) clearTimeout(room.roundTimeoutId);
 
         const wasPlaying = room.status === 'playing' || room.status === 'result';
-        // Send individually to ensure the remaining player receives it (since this socket is leaving the room)
+        // Send individually to ensure the remaining player receives it (with round info)
         Object.values(room.players).forEach(p => {
-          if (p.socketId !== socket.id) {
-            io.to(p.socketId).emit("opponent_disconnected", { wasPlaying });
+          if (p.socketId !== socketId) {
+            io.to(p.socketId).emit("opponent_disconnected", {
+              wasPlaying,
+              round: room.round
+            });
           }
         });
       }
       delete rooms[roomId];
-      playerRoomMap.delete(socket.id);
+      playerRoomMap.delete(socketId);
     }
+  };
+
+  socket.on("leave_game", () => {
+    console.log("Client explicitly left game room:", socket.id);
+    handlePlayerLeaveRoom(socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id, "Remaining:", io.sockets.sockets.size);
+    io.emit("player_count", { count: io.sockets.sockets.size });
+    handlePlayerLeaveRoom(socket.id);
   });
 });
 

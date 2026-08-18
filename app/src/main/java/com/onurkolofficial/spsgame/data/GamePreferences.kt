@@ -18,6 +18,7 @@ class GamePreferences(context: Context) {
         private const val KEY_STATS_ONLINE_WINS = "sps_stats_online_wins"
         private const val KEY_STATS_ONLINE_DRAWS = "sps_stats_online_draws"
         private const val KEY_STATS_ONLINE_LOSSES = "sps_stats_online_losses"
+        private const val KEY_STATS_ONLINE_ABANDONS = "sps_stats_online_abandons"
         private const val KEY_STATS_ONLINE_HISTORY = "sps_stats_online_history"
         private const val KEY_SOUND = "sps_sound"
         private const val KEY_VOLUME = "sps_volume"
@@ -71,6 +72,10 @@ class GamePreferences(context: Context) {
     var statsOnlineLosses: Int
         get() = prefs.getInt(KEY_STATS_ONLINE_LOSSES, 0)
         set(value) = prefs.edit().putInt(KEY_STATS_ONLINE_LOSSES, value).apply()
+
+    var statsOnlineAbandons: Int
+        get() = prefs.getInt(KEY_STATS_ONLINE_ABANDONS, 0)
+        set(value) = prefs.edit().putInt(KEY_STATS_ONLINE_ABANDONS, value).apply()
 
     var soundEnabled: Boolean
         get() = prefs.getBoolean(KEY_SOUND, true)

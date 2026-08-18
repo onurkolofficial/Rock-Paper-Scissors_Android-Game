@@ -113,7 +113,7 @@ fun OnlineMultiplayerScreen(
             message = stringResource(id = R.string.online_exit_confirm),
             onConfirm = {
                 showConfirmExit = false
-                viewModel.leaveMatchmakingOrGame()
+                viewModel.forfeitGame()
                 onNavigateBack()
             },
             onCancel = { showConfirmExit = false }
@@ -714,12 +714,35 @@ fun OnlineMultiplayerScreen(
                             letterSpacing = 1.sp,
                             textAlign = TextAlign.Center
                         )
-                        if (uiState.finalResult == GameResult.WIN) {
+                        if (uiState.isAbandonedWon || uiState.finalResult == GameResult.WIN) {
                             Text(
                                 text = stringResource(id = R.string.online_you_won).toAppUppercase(),
                                 color = Color.Green,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 2.sp
+                            )
+                            Text(
+                                text = stringResource(id = R.string.online_opponent_abandoned_won),
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(id = R.string.online_match_void).toAppUppercase(),
+                                color = Color(0xFFFFD700),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 2.sp
+                            )
+                            Text(
+                                text = stringResource(id = R.string.online_opponent_abandoned_void),
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 18.sp
                             )
                         }
                     } else {

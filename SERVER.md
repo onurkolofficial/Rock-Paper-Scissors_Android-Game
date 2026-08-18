@@ -137,6 +137,7 @@ object GameAppConfig {
 | `create_private_room` | `{ name: string, skin?: string }` | 6 haneli özel oda kodu oluşturur ve rakip bekler. |
 | `join_private_room` | `{ roomId: string, name: string, skin?: string }` | Kodunu bildiği özel odaya katılır. |
 | `send_move` | `{ move: "rock" \| "paper" \| "scissors" \| "iron" \| "ice" \| "steel" }` | O tur için yapılan hamleyi iletir. |
+| `leave_game` | `{}` | Oyuncu maçtan veya odadan bilerek ayrıldığında (terk ettiğinde) sunucuya bildirir. |
 | `timeout_from_client` | `{}` | Oyuncunun 10 saniyelik süresi dolduğunda otomatik turu sonlandırmak için çağrılır. |
 
 ---
@@ -155,7 +156,7 @@ object GameAppConfig {
 | `round_result` | `{ result: "win" \| "lose" \| "draw", opponentMove, score, opponentScore, draws, round }` | Tur değerlendirme sonucu. |
 | `next_round` | `{ round: number }` | Yeni turun başladığını bildirir. |
 | `game_over` | `{ result: "win" \| "lose" \| "draw" }` | 10 tur tamamlandığında nihai maç galibini bildirir. |
-| `opponent_disconnected` | `{ wasPlaying: boolean }` | Rakip maç devam ederken oyundan ayrıldı (hükmen galibiyet). |
+| `opponent_disconnected` | `{ wasPlaying: boolean, round: number }` | Rakip maç devam ederken oyundan ayrıldı / terk etti. (5 turun üzerindeyse kalan oyuncu galip sayılır). |
 
 ---
 

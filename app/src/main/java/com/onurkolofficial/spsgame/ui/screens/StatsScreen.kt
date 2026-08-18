@@ -39,6 +39,7 @@ fun StatsScreen(
     var oWins by remember { mutableStateOf(prefs.statsOnlineWins) }
     var oLosses by remember { mutableStateOf(prefs.statsOnlineLosses) }
     var oDraws by remember { mutableStateOf(prefs.statsOnlineDraws) }
+    var oAbandons by remember { mutableStateOf(prefs.statsOnlineAbandons) }
     var oHistory by remember { mutableStateOf(prefs.onlineHistory) }
 
     val calculateWinRate = { w: Int, l: Int, d: Int ->
@@ -135,7 +136,7 @@ fun StatsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Divider(color = Color.White.copy(alpha = 0.05f))
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -172,11 +173,12 @@ fun StatsScreen(
                         StatItem(label = stringResource(id = R.string.stats_wins), value = oWins.toString(), Color.Green)
                         StatItem(label = stringResource(id = R.string.stats_draws), value = oDraws.toString(), Color.White)
                         StatItem(label = stringResource(id = R.string.stats_losses), value = oLosses.toString(), Color.Red)
+                        StatItem(label = stringResource(id = R.string.stats_online_abandons), value = oAbandons.toString(), Color(0xFFF97316))
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Divider(color = Color.White.copy(alpha = 0.05f))
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
 
                     Spacer(modifier = Modifier.height(12.dp))
 

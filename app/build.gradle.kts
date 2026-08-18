@@ -11,8 +11,8 @@ android {
         applicationId = "com.onurkolofficial.spsgame"
         minSdk = 24
         targetSdk = 36
-        versionCode = 30
-        versionName = "4.0.0.$versionCode"
+        versionCode = 31
+        versionName = "4.1.0.$versionCode"
     }
 
     buildTypes {

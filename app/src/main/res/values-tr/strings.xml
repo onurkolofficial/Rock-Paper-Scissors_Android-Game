@@ -186,4 +186,8 @@
     <string name="update_dialog_title">YENİ SÜRÜM: %1$s</string>
     <string name="update_dialog_features">• Oyun Temeli Değiştirildi: Artık web tabanlı değil, doğrudan sisteme uyumlu çekirdek güncellemesi.\n• Çevrimiçi Çok Oyunculu: Dünyanın her yerinden oyuncularla eşleşip oynayın!\n• Özel Görünümler (Skins): Mağazadan el görünümlerinizi özelleştirin. Artık çevrimiçi modda da görünümleriniz görünecek.\n• Özel Nesneler: Mağazadan Demir, Buz Küpü ve Çelik hamleleri satın alarak rakiplerinizi şaşırtın.\n• Play Oyunlar Yedekleme: İlerlemeniz Google Play Games Snapshot ile otomatik olarak kaydedilecektir.\n• Arayüz İyileştirmeleri: Daha akıcı animasyonlar ve şık görsel düzenlemeler.</string>
     <string name="update_dialog_close">Oyuna Başla</string>
+    <string name="stats_online_abandons">Oyun Terk Etme</string>
+    <string name="online_opponent_abandoned_won">Rakip oyunu terk etti. 5 tur tamamlandığı için hükmen galip sayıldınız!</string>
+    <string name="online_opponent_abandoned_void">Rakip oyunu terk etti. 5 tur tamamlanmadığı için maç geçersiz sayıldı.</string>
+    <string name="online_match_void">MAÇ GEÇERSİZ</string>
 </resources>
