@@ -2,6 +2,7 @@ package com.onurkolofficial.spsgame.ui.navigation
 
 import androidx.compose.animation.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -40,7 +41,8 @@ fun AppNavHost(
             val viewModel = remember {
                 MainMenuViewModel(
                     prefs = appContainer.prefs,
-                    playGamesManager = appContainer.playGamesManager
+                    playGamesManager = appContainer.playGamesManager,
+                    socketManager = appContainer.socketManager
                 )
             }
 
@@ -91,6 +93,10 @@ fun AppNavHost(
         }
 
         composable<ScreenRoute.SinglePlayer> {
+            LaunchedEffect(Unit) {
+                appContainer.socketManager.disconnect()
+            }
+
             val viewModel = remember {
                 SinglePlayerViewModel(
                     prefs = appContainer.prefs,
@@ -110,6 +116,10 @@ fun AppNavHost(
         }
 
         composable<ScreenRoute.TwoPlayer> {
+            LaunchedEffect(Unit) {
+                appContainer.socketManager.disconnect()
+            }
+
             val viewModel = remember {
                 TwoPlayerViewModel(
                     prefs = appContainer.prefs,
@@ -134,7 +144,8 @@ fun AppNavHost(
                     prefs = appContainer.prefs,
                     soundManager = appContainer.soundManager,
                     vibrationManager = appContainer.vibrationManager,
-                    playGamesManager = appContainer.playGamesManager
+                    playGamesManager = appContainer.playGamesManager,
+                    socketManager = appContainer.socketManager
                 )
             }
 

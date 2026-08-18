@@ -44,14 +44,8 @@ fun MainMenuScreen(
 
     LaunchedEffect(Unit) {
         appContainer.soundManager.startBgm()
+        viewModel.ensureOnlineConnected()
         viewModel.refreshProfile()
-    }
-
-    DisposableEffect(viewModel) {
-        viewModel.startListeningPlayerCount()
-        onDispose {
-            viewModel.stopListeningPlayerCount()
-        }
     }
 
     if (uiState.showStore) {

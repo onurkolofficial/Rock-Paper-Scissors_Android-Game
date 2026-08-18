@@ -94,11 +94,11 @@ fun OnlineMultiplayerScreen(
             showConfirmExit = true
         } else if (uiState.gameMode != MultiplayerMode.SELECTION && uiState.gameMode != MultiplayerMode.IN_GAME) {
             appContainer.soundManager.playClick()
-            viewModel.disconnect()
+            viewModel.leaveMatchmakingOrGame()
             viewModel.setGameMode(MultiplayerMode.SELECTION)
         } else {
             appContainer.soundManager.playClick()
-            viewModel.disconnect()
+            viewModel.leaveMatchmakingOrGame()
             appContainer.playGamesManager.saveGame()
             onNavigateBack()
         }
@@ -113,7 +113,7 @@ fun OnlineMultiplayerScreen(
             message = stringResource(id = R.string.online_exit_confirm),
             onConfirm = {
                 showConfirmExit = false
-                viewModel.disconnect()
+                viewModel.leaveMatchmakingOrGame()
                 onNavigateBack()
             },
             onCancel = { showConfirmExit = false }
@@ -144,7 +144,7 @@ fun OnlineMultiplayerScreen(
                         if (uiState.gameMode == MultiplayerMode.IN_GAME) {
                             showConfirmExit = true
                         } else {
-                            viewModel.disconnect()
+                            viewModel.leaveMatchmakingOrGame()
                             onNavigateBack()
                         }
                     },
@@ -756,7 +756,7 @@ fun OnlineMultiplayerScreen(
                     Button(
                         onClick = {
                             appContainer.soundManager.playClick()
-                            viewModel.disconnect()
+                            viewModel.leaveMatchmakingOrGame()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
                         shape = RoundedCornerShape(16.dp),
@@ -779,7 +779,7 @@ fun OnlineMultiplayerScreen(
                     Button(
                         onClick = {
                             appContainer.soundManager.playClick()
-                            viewModel.disconnect()
+                            viewModel.leaveMatchmakingOrGame()
                             onNavigateBack()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),

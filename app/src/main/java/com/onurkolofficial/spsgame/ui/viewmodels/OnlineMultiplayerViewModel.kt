@@ -8,12 +8,11 @@ import com.onurkolofficial.spsgame.model.GameResult
 import com.onurkolofficial.spsgame.model.Move
 import com.onurkolofficial.spsgame.ui.screens.MatchStatus
 import com.onurkolofficial.spsgame.ui.screens.MultiplayerMode
-import com.onurkolofficial.spsgame.utils.GameAppConfig
+import com.onurkolofficial.spsgame.utils.GameSocketManager
 import com.onurkolofficial.spsgame.utils.PlayGamesConstants
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
-import io.socket.client.IO
 import io.socket.client.Socket
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -54,7 +53,8 @@ class OnlineMultiplayerViewModel(
     private val prefs: GamePreferences,
     private val soundManager: SoundManager,
     private val vibrationManager: VibrationManager,
-    private val playGamesManager: PlayGamesManager
+    private val playGamesManager: PlayGamesManager,
+    private val socketManager: GameSocketManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -67,10 +67,14 @@ class OnlineMultiplayerViewModel(
     )
     val uiState: StateFlow<OnlineMultiplayerUiState> = _uiState.asStateFlow()
 
-    private var socket: Socket? = null
     private var timerJob: Job? = null
     private var startingTimerJob: Job? = null
     private var nextRoundTimerJob: Job? = null
+
+    init {
+        socketManager.connect()
+        setupSocketListeners()
+    }
 
     fun setRoomCodeInput(code: String) {
         _uiState.update { it.copy(roomCodeInput = code) }
@@ -153,39 +157,23 @@ class OnlineMultiplayerViewModel(
         val data = JSONObject().apply {
             put("move", move.toId())
         }
-        socket?.emit("send_move", data)
+        socketManager.getSocket().emit("send_move", data)
     }
 
     private fun connectAndEmit(event: String, data: JSONObject) {
-        if (socket == null) {
-            try {
-                val opts = IO.Options().apply {
-                    forceNew = true
-                    reconnection = true
-                }
-                socket = IO.socket(GameAppConfig.SOCKET_URL, opts)
-                setupSocketListeners()
-            } catch (e: Exception) {
-                Log.e("OnlineMultiplayerVM", "Connection error", e)
-                _uiState.update { it.copy(errorMsg = "Connection failed to server.", gameMode = MultiplayerMode.SELECTION) }
-                return
-            }
-        }
-
-        socket?.let { s ->
-            if (s.connected()) {
+        val s = socketManager.getSocket()
+        if (s.connected()) {
+            s.emit(event, data)
+        } else {
+            s.once(Socket.EVENT_CONNECT) {
                 s.emit(event, data)
-            } else {
-                s.once(Socket.EVENT_CONNECT) {
-                    s.emit(event, data)
-                }
-                s.connect()
             }
+            socketManager.connect()
         }
     }
 
     private fun setupSocketListeners() {
-        val s = socket ?: return
+        val s = socketManager.getSocket()
 
         s.on("waiting_for_opponent") { args ->
             val res = args[0] as JSONObject
@@ -394,7 +382,7 @@ class OnlineMultiplayerViewModel(
                 delay(1000)
             }
             _uiState.update { it.copy(timerVal = 0) }
-            socket?.emit("timeout_from_client")
+            socketManager.getSocket().emit("timeout_from_client")
         }
     }
 
@@ -409,12 +397,10 @@ class OnlineMultiplayerViewModel(
         }
     }
 
-    fun disconnect() {
+    fun leaveMatchmakingOrGame() {
         timerJob?.cancel()
         startingTimerJob?.cancel()
         nextRoundTimerJob?.cancel()
-        socket?.disconnect()
-        socket = null
         _uiState.update {
             OnlineMultiplayerUiState(
                 activeSkinId = prefs.activeSkin,
@@ -427,6 +413,8 @@ class OnlineMultiplayerViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        disconnect()
+        timerJob?.cancel()
+        startingTimerJob?.cancel()
+        nextRoundTimerJob?.cancel()
     }
 }

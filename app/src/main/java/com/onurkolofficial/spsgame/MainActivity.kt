@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (::appContainer.isInitialized) {
             appContainer.soundManager.resumeBgm()
+            appContainer.socketManager.connect()
         }
     }
 
@@ -76,6 +77,7 @@ class MainActivity : ComponentActivity() {
         if (::appContainer.isInitialized) {
             appContainer.soundManager.pauseBgm()
             appContainer.playGamesManager.saveGame()
+            appContainer.socketManager.disconnect()
         }
     }
 
@@ -83,6 +85,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         if (::appContainer.isInitialized) {
             appContainer.soundManager.release()
+            appContainer.socketManager.disconnect()
         }
     }
 }
