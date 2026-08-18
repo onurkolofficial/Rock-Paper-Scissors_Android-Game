@@ -33,6 +33,9 @@ fun MoveSelectorView(
     ironCount: Int = 0,
     iceCount: Int = 0,
     steelCount: Int = 0,
+    fireCount: Int = 0,
+    lightningCount: Int = 0,
+    bombCount: Int = 0,
     selectedMove: Move? = null,
     isInputEnabled: Boolean = true,
     showSpecialMoves: Boolean = true,
@@ -117,6 +120,42 @@ fun MoveSelectorView(
                 isEnabled = isInputEnabled && steelCount > 0,
                 borderColor = Color(0xFFB0BEC5),
                 onClick = { onMoveSelected(Move.STEEL) }
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Fire
+            SpecialMoveButton(
+                move = Move.FIRE,
+                emoji = "🔥",
+                count = fireCount,
+                isSelected = selectedMove == Move.FIRE,
+                isEnabled = isInputEnabled && fireCount > 0,
+                borderColor = Color(0xFFFF5722),
+                onClick = { onMoveSelected(Move.FIRE) }
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Lightning
+            SpecialMoveButton(
+                move = Move.LIGHTNING,
+                emoji = "⚡",
+                count = lightningCount,
+                isSelected = selectedMove == Move.LIGHTNING,
+                isEnabled = isInputEnabled && lightningCount > 0,
+                borderColor = Color(0xFFFFEB3B),
+                onClick = { onMoveSelected(Move.LIGHTNING) }
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Bomb
+            SpecialMoveButton(
+                move = Move.BOMB,
+                emoji = "💣",
+                count = bombCount,
+                isSelected = selectedMove == Move.BOMB,
+                isEnabled = isInputEnabled && bombCount > 0,
+                borderColor = Color(0xFFEF4444),
+                onClick = { onMoveSelected(Move.BOMB) }
             )
         }
     }

@@ -1,6 +1,8 @@
 package com.onurkolofficial.spsgame.ui.components
 import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,13 +65,17 @@ val SKINS_LIST = listOf(
     Skin("neon", R.string.skin_neon, 400, rockEmoji = "💎", paperEmoji = "📜", scissorsEmoji = "⚡"),
     Skin("fancy", R.string.skin_fancy, 500, rockEmoji = "✊", paperEmoji = "✋", scissorsEmoji = "✌️"),
     Skin("gloved", R.string.skin_gloved, 750, rockEmoji = "🥊", paperEmoji = "🧤", scissorsEmoji = "✌🏼"),
-    Skin("biker", R.string.skin_biker, 1000, R.drawable.gfx_skin_bike_rock, R.drawable.gfx_skin_bike_paper, R.drawable.gfx_skin_bike_scissors)
+    Skin("biker", R.string.skin_biker, 1000, R.drawable.gfx_skin_bike_rock, R.drawable.gfx_skin_bike_paper, R.drawable.gfx_skin_bike_scissors),
+    Skin("gold", R.string.skin_gold, 1250, rockEmoji = "🪙", paperEmoji = "📒", scissorsEmoji = "⚔️")
 )
 
 val CONSUMABLES_LIST = listOf(
     ConsumableItem("iron", R.string.shop_iron, R.string.shop_iron_desc, 45, drawableResId = R.drawable.gfx_iron),
     ConsumableItem("ice", R.string.shop_ice, R.string.shop_ice_desc, 95, emoji = "🧊"),
-    ConsumableItem("steel", R.string.shop_steel, R.string.shop_steel_desc, 100, drawableResId = R.drawable.gfx_steel)
+    ConsumableItem("steel", R.string.shop_steel, R.string.shop_steel_desc, 100, drawableResId = R.drawable.gfx_steel),
+    ConsumableItem("fire", R.string.shop_fire, R.string.shop_fire_desc, 110, emoji = "🔥"),
+    ConsumableItem("lightning", R.string.shop_lightning, R.string.shop_lightning_desc, 120, emoji = "⚡"),
+    ConsumableItem("bomb", R.string.shop_bomb, R.string.shop_bomb_desc, 150, emoji = "💣")
 )
 
 @Composable
@@ -187,15 +193,31 @@ fun StoreModal(
                 }
             }
 
-            // List
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                if (activeTab == "skins") {
-                    items(SKINS_LIST) { skin ->
-                        val isOwned = ownedSkins.contains(skin.id)
-                        val isActive = activeSkinId == skin.id
+            // Animated List
+            AnimatedContent(
+                targetState = activeTab,
+                label = "StoreTabAnim",
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(220)) + slideInHorizontally(
+                        initialOffsetX = { if (targetState == "consumables") it / 4 else -it / 4 },
+                        animationSpec = tween(220, easing = FastOutSlowInEasing)
+                    )) togetherWith (fadeOut(animationSpec = tween(180)) + slideOutHorizontally(
+                        targetOffsetX = { if (targetState == "consumables") -it / 4 else it / 4 },
+                        animationSpec = tween(180, easing = FastOutSlowInEasing)
+                    ))
+                }
+            ) { tab ->
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (tab == "skins") {
+                        items(SKINS_LIST, key = { it.id }) { skin ->
+                            val isOwned = ownedSkins.contains(skin.id)
+                            val isActive = activeSkinId == skin.id
 
                         Row(
                             modifier = Modifier
@@ -341,6 +363,9 @@ fun StoreModal(
                             "iron" -> prefs.ironCount
                             "ice" -> prefs.iceCount
                             "steel" -> prefs.steelCount
+                            "fire" -> prefs.fireCount
+                            "lightning" -> prefs.lightningCount
+                            "bomb" -> prefs.bombCount
                             else -> 0
                         }
 
@@ -437,6 +462,7 @@ fun StoreModal(
                 }
             }
         }
+        }
 
         // Alert Modal
         alertMessage?.let { msg ->
@@ -529,6 +555,9 @@ fun StoreModal(
                                         "iron" -> prefs.ironCount += quantity
                                         "ice" -> prefs.iceCount += quantity
                                         "steel" -> prefs.steelCount += quantity
+                                        "fire" -> prefs.fireCount += quantity
+                                        "lightning" -> prefs.lightningCount += quantity
+                                        "bomb" -> prefs.bombCount += quantity
                                     }
                                     selectedItem = null
                                     onRefreshCash()

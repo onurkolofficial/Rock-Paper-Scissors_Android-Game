@@ -30,16 +30,24 @@ class GamePreferences(context: Context) {
         private const val KEY_IRON_COUNT = "sps_iron_count"
         private const val KEY_ICE_COUNT = "sps_ice_count"
         private const val KEY_STEEL_COUNT = "sps_steel_count"
+        private const val KEY_FIRE_COUNT = "sps_fire_count"
+        private const val KEY_LIGHTNING_COUNT = "sps_lightning_count"
+        private const val KEY_BOMB_COUNT = "sps_bomb_count"
         private const val KEY_STATS_CASH = "sps_stats_cash"
         private const val KEY_OWNED_SKINS = "sps_owned_skins"
         private const val KEY_ACTIVE_SKIN = "sps_active_skin"
         private const val KEY_USER_CHANGED_NAME = "sps_user_changed_name"
         private const val KEY_LAST_SEEN_UPDATE_VERSION = "sps_last_seen_update_version"
+        private const val KEY_LAST_SEEN_NOTIFICATIONS_VERSION = "sps_last_seen_notifications_version"
     }
 
     var lastSeenUpdateDialogVersion: String
         get() = prefs.getString(KEY_LAST_SEEN_UPDATE_VERSION, "") ?: ""
         set(value) = prefs.edit().putString(KEY_LAST_SEEN_UPDATE_VERSION, value).apply()
+
+    var lastSeenNotificationsVersion: String
+        get() = prefs.getString(KEY_LAST_SEEN_NOTIFICATIONS_VERSION, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_LAST_SEEN_NOTIFICATIONS_VERSION, value).apply()
 
     var userName: String
         get() = prefs.getString(KEY_USER_NAME, "Guest") ?: "Guest"
@@ -117,6 +125,18 @@ class GamePreferences(context: Context) {
         get() = prefs.getInt(KEY_STEEL_COUNT, 0)
         set(value) = prefs.edit().putInt(KEY_STEEL_COUNT, value).apply()
 
+    var fireCount: Int
+        get() = prefs.getInt(KEY_FIRE_COUNT, 0)
+        set(value) = prefs.edit().putInt(KEY_FIRE_COUNT, value).apply()
+
+    var lightningCount: Int
+        get() = prefs.getInt(KEY_LIGHTNING_COUNT, 0)
+        set(value) = prefs.edit().putInt(KEY_LIGHTNING_COUNT, value).apply()
+
+    var bombCount: Int
+        get() = prefs.getInt(KEY_BOMB_COUNT, 0)
+        set(value) = prefs.edit().putInt(KEY_BOMB_COUNT, value).apply()
+
     var statsCash: Int
         get() = prefs.getInt(KEY_STATS_CASH, 0)
         set(value) = prefs.edit().putInt(KEY_STATS_CASH, value).apply()
@@ -192,6 +212,9 @@ class GamePreferences(context: Context) {
                 KEY_IRON_COUNT -> editor.putInt(key, value.toIntOrNull() ?: 0)
                 KEY_ICE_COUNT -> editor.putInt(key, value.toIntOrNull() ?: 0)
                 KEY_STEEL_COUNT -> editor.putInt(key, value.toIntOrNull() ?: 0)
+                KEY_FIRE_COUNT -> editor.putInt(key, value.toIntOrNull() ?: 0)
+                KEY_LIGHTNING_COUNT -> editor.putInt(key, value.toIntOrNull() ?: 0)
+                KEY_BOMB_COUNT -> editor.putInt(key, value.toIntOrNull() ?: 0)
                 KEY_STATS_CASH -> editor.putInt(key, value.toIntOrNull() ?: 0)
                 KEY_ACTIVE_SKIN -> editor.putString(key, value)
                 KEY_OWNED_SKINS -> editor.putString(key, value) // is already json string
@@ -214,6 +237,9 @@ class GamePreferences(context: Context) {
             putInt(KEY_IRON_COUNT, 0)
             putInt(KEY_ICE_COUNT, 0)
             putInt(KEY_STEEL_COUNT, 0)
+            putInt(KEY_FIRE_COUNT, 0)
+            putInt(KEY_LIGHTNING_COUNT, 0)
+            putInt(KEY_BOMB_COUNT, 0)
             putString(KEY_ACTIVE_SKIN, "default")
             putString(KEY_OWNED_SKINS, gson.toJson(listOf("default")))
             apply()

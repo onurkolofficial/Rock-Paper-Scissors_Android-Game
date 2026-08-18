@@ -33,6 +33,9 @@ data class SinglePlayerUiState(
     val ironCount: Int = 0,
     val iceCount: Int = 0,
     val steelCount: Int = 0,
+    val fireCount: Int = 0,
+    val lightningCount: Int = 0,
+    val bombCount: Int = 0,
     val activeSkinId: String = "default"
 )
 
@@ -49,6 +52,9 @@ class SinglePlayerViewModel(
             ironCount = prefs.ironCount,
             iceCount = prefs.iceCount,
             steelCount = prefs.steelCount,
+            fireCount = prefs.fireCount,
+            lightningCount = prefs.lightningCount,
+            bombCount = prefs.bombCount,
             activeSkinId = prefs.activeSkin
         )
     )
@@ -61,6 +67,9 @@ class SinglePlayerViewModel(
                 ironCount = prefs.ironCount,
                 iceCount = prefs.iceCount,
                 steelCount = prefs.steelCount,
+                fireCount = prefs.fireCount,
+                lightningCount = prefs.lightningCount,
+                bombCount = prefs.bombCount,
                 activeSkinId = prefs.activeSkin
             )
         }
@@ -94,6 +103,27 @@ class SinglePlayerViewModel(
                     val newCount = state.steelCount - 1
                     prefs.steelCount = newCount
                     _uiState.update { it.copy(steelCount = newCount) }
+                } else canPlay = false
+            }
+            Move.FIRE -> {
+                if (state.fireCount > 0) {
+                    val newCount = state.fireCount - 1
+                    prefs.fireCount = newCount
+                    _uiState.update { it.copy(fireCount = newCount) }
+                } else canPlay = false
+            }
+            Move.LIGHTNING -> {
+                if (state.lightningCount > 0) {
+                    val newCount = state.lightningCount - 1
+                    prefs.lightningCount = newCount
+                    _uiState.update { it.copy(lightningCount = newCount) }
+                } else canPlay = false
+            }
+            Move.BOMB -> {
+                if (state.bombCount > 0) {
+                    val newCount = state.bombCount - 1
+                    prefs.bombCount = newCount
+                    _uiState.update { it.copy(bombCount = newCount) }
                 } else canPlay = false
             }
             else -> {}

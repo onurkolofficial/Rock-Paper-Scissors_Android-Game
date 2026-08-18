@@ -6,6 +6,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import com.onurkolofficial.spsgame.data.GamePreferences
 import com.onurkolofficial.spsgame.utils.AdManager
 import com.onurkolofficial.spsgame.utils.GameSocketManager
+import com.onurkolofficial.spsgame.utils.InAppUpdateManager
 import com.onurkolofficial.spsgame.utils.PlayGamesManager
 import com.onurkolofficial.spsgame.utils.SoundManager
 import com.onurkolofficial.spsgame.utils.VibrationManager
@@ -17,6 +18,7 @@ class AppContainer(activity: Activity) {
     val playGamesManager: PlayGamesManager by lazy { PlayGamesManager(activity, prefs) }
     val adManager: AdManager by lazy { AdManager(activity.applicationContext, prefs) }
     val socketManager: GameSocketManager by lazy { GameSocketManager() }
+    val updateManager: InAppUpdateManager by lazy { InAppUpdateManager(activity.applicationContext) }
 }
 
 val LocalAppContainer = staticCompositionLocalOf<AppContainer> {

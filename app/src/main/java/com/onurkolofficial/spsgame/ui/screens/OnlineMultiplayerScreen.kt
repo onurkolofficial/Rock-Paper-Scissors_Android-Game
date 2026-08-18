@@ -362,6 +362,21 @@ fun OnlineMultiplayerScreen(
                                         viewModel.sendMove(Move.STEEL)
                                     }
                                 }
+                                if (uiState.fireCount > 0) {
+                                    MoveSelectionCard(move = Move.FIRE, skin = activeSkin, qty = uiState.fireCount, enabled = true) {
+                                        viewModel.sendMove(Move.FIRE)
+                                    }
+                                }
+                                if (uiState.lightningCount > 0) {
+                                    MoveSelectionCard(move = Move.LIGHTNING, skin = activeSkin, qty = uiState.lightningCount, enabled = true) {
+                                        viewModel.sendMove(Move.LIGHTNING)
+                                    }
+                                }
+                                if (uiState.bombCount > 0) {
+                                    MoveSelectionCard(move = Move.BOMB, skin = activeSkin, qty = uiState.bombCount, enabled = true) {
+                                        viewModel.sendMove(Move.BOMB)
+                                    }
+                                }
                             }
                         }
                     } else {

@@ -49,6 +49,9 @@ data class OnlineMultiplayerUiState(
     val ironCount: Int = 0,
     val iceCount: Int = 0,
     val steelCount: Int = 0,
+    val fireCount: Int = 0,
+    val lightningCount: Int = 0,
+    val bombCount: Int = 0,
     val allowSpecialItems: Boolean = false,
     val roomMode: String = "classic",
     val createRoomAllowItems: Boolean = false
@@ -67,7 +70,10 @@ class OnlineMultiplayerViewModel(
             activeSkinId = prefs.activeSkin,
             ironCount = prefs.ironCount,
             iceCount = prefs.iceCount,
-            steelCount = prefs.steelCount
+            steelCount = prefs.steelCount,
+            fireCount = prefs.fireCount,
+            lightningCount = prefs.lightningCount,
+            bombCount = prefs.bombCount
         )
     )
     val uiState: StateFlow<OnlineMultiplayerUiState> = _uiState.asStateFlow()
@@ -167,6 +173,27 @@ class OnlineMultiplayerViewModel(
                     val newCount = state.steelCount - 1
                     prefs.steelCount = newCount
                     _uiState.update { it.copy(steelCount = newCount) }
+                } else canPlay = false
+            }
+            Move.FIRE -> {
+                if (state.allowSpecialItems && state.fireCount > 0) {
+                    val newCount = state.fireCount - 1
+                    prefs.fireCount = newCount
+                    _uiState.update { it.copy(fireCount = newCount) }
+                } else canPlay = false
+            }
+            Move.LIGHTNING -> {
+                if (state.allowSpecialItems && state.lightningCount > 0) {
+                    val newCount = state.lightningCount - 1
+                    prefs.lightningCount = newCount
+                    _uiState.update { it.copy(lightningCount = newCount) }
+                } else canPlay = false
+            }
+            Move.BOMB -> {
+                if (state.allowSpecialItems && state.bombCount > 0) {
+                    val newCount = state.bombCount - 1
+                    prefs.bombCount = newCount
+                    _uiState.update { it.copy(bombCount = newCount) }
                 } else canPlay = false
             }
             else -> {}
@@ -367,6 +394,7 @@ class OnlineMultiplayerViewModel(
                     soundManager.playDraw()
                 }
             }
+            prefs.onlineHistory = (prefs.onlineHistory + (finalOutcome?.toId() ?: "draw")).takeLast(10)
             playGamesManager.saveGame()
         }
 
@@ -387,6 +415,7 @@ class OnlineMultiplayerViewModel(
                     soundManager.playWin()
                     vibrationManager.vibrateSuccess()
                     playGamesManager.submitScore(PlayGamesConstants.LEADERBOARD_WINS, prefs.statsOnlineWins.toLong())
+                    prefs.onlineHistory = (prefs.onlineHistory + "win").takeLast(10)
                     playGamesManager.saveGame()
 
                     _uiState.update {
@@ -475,6 +504,7 @@ class OnlineMultiplayerViewModel(
         if (wasInGame) {
             prefs.statsOnlineAbandons++
             prefs.statsOnlineLosses++
+            prefs.onlineHistory = (prefs.onlineHistory + "lose").takeLast(10)
             playGamesManager.saveGame()
         }
 
@@ -496,7 +526,10 @@ class OnlineMultiplayerViewModel(
                 activeSkinId = prefs.activeSkin,
                 ironCount = prefs.ironCount,
                 iceCount = prefs.iceCount,
-                steelCount = prefs.steelCount
+                steelCount = prefs.steelCount,
+                fireCount = prefs.fireCount,
+                lightningCount = prefs.lightningCount,
+                bombCount = prefs.bombCount
             )
         }
     }

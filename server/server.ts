@@ -38,39 +38,73 @@ interface Room {
 const rooms: Record<string, Room> = {};
 const playerRoomMap = new Map<string, string>(); // socketId -> roomId
 
-export type MoveType = 'rock' | 'paper' | 'scissors' | 'iron' | 'ice' | 'steel';
+export type MoveType = 'rock' | 'paper' | 'scissors' | 'iron' | 'ice' | 'steel' | 'fire' | 'lightning' | 'bomb';
 
 export const getOutcome = (m1: string, m2: string): 'win' | 'lose' | 'draw' => {
   if (m1 === m2) return 'draw';
 
-  // Ice rules: Beats rock, paper, scissors, iron. Loses to steel.
+  // BOMB rules: Beats rock, iron, steel, scissors, fire, lightning. Loses to paper, ice.
+  if (m1 === 'bomb') {
+    if (m2 === 'rock' || m2 === 'iron' || m2 === 'steel' || m2 === 'scissors' || m2 === 'fire' || m2 === 'lightning') return 'win';
+    if (m2 === 'paper' || m2 === 'ice') return 'lose';
+  }
+  if (m2 === 'bomb') {
+    if (m1 === 'rock' || m1 === 'iron' || m1 === 'steel' || m1 === 'scissors' || m1 === 'fire' || m1 === 'lightning') return 'lose';
+    if (m1 === 'paper' || m1 === 'ice') return 'win';
+  }
+
+  // LIGHTNING rules: Beats steel, iron, scissors, ice, fire. Loses to rock, paper, bomb.
+  if (m1 === 'lightning') {
+    if (m2 === 'steel' || m2 === 'iron' || m2 === 'scissors' || m2 === 'ice' || m2 === 'fire') return 'win';
+    if (m2 === 'rock' || m2 === 'paper' || m2 === 'bomb') return 'lose';
+  }
+  if (m2 === 'lightning') {
+    if (m1 === 'steel' || m1 === 'iron' || m1 === 'scissors' || m1 === 'ice' || m1 === 'fire') return 'lose';
+    if (m1 === 'rock' || m1 === 'paper' || m1 === 'bomb') return 'win';
+  }
+
+  // FIRE rules: Beats paper, ice, scissors. Loses to rock, steel, bomb, lightning. Draws with iron.
+  if (m1 === 'fire') {
+    if (m2 === 'paper' || m2 === 'ice' || m2 === 'scissors') return 'win';
+    if (m2 === 'rock' || m2 === 'steel' || m2 === 'bomb' || m2 === 'lightning') return 'lose';
+    if (m2 === 'iron') return 'draw';
+  }
+  if (m2 === 'fire') {
+    if (m1 === 'paper' || m1 === 'ice' || m1 === 'scissors') return 'lose';
+    if (m1 === 'rock' || m1 === 'steel' || m1 === 'bomb' || m1 === 'lightning') return 'win';
+    if (m1 === 'iron') return 'draw';
+  }
+
+  // ICE rules: Beats rock, paper, scissors, iron, bomb. Loses to steel, fire, lightning.
   if (m1 === 'ice') {
-    if (m2 === 'rock' || m2 === 'paper' || m2 === 'scissors' || m2 === 'iron') return 'win';
-    if (m2 === 'steel') return 'lose';
+    if (m2 === 'rock' || m2 === 'paper' || m2 === 'scissors' || m2 === 'iron' || m2 === 'bomb') return 'win';
+    if (m2 === 'steel' || m2 === 'fire' || m2 === 'lightning') return 'lose';
   }
   if (m2 === 'ice') {
-    if (m1 === 'rock' || m1 === 'paper' || m1 === 'scissors' || m1 === 'iron') return 'lose';
-    if (m1 === 'steel') return 'win';
+    if (m1 === 'rock' || m1 === 'paper' || m1 === 'scissors' || m1 === 'iron' || m1 === 'bomb') return 'lose';
+    if (m1 === 'steel' || m1 === 'fire' || m1 === 'lightning') return 'win';
   }
 
-  // Steel rules: Beats iron, rock, scissors, ice. Loses to paper.
+  // STEEL rules: Beats iron, rock, scissors, ice, fire. Loses to paper, lightning, bomb.
   if (m1 === 'steel') {
-    if (m2 === 'iron' || m2 === 'rock' || m2 === 'scissors' || m2 === 'ice') return 'win';
-    if (m2 === 'paper') return 'lose';
+    if (m2 === 'iron' || m2 === 'rock' || m2 === 'scissors' || m2 === 'ice' || m2 === 'fire') return 'win';
+    if (m2 === 'paper' || m2 === 'lightning' || m2 === 'bomb') return 'lose';
   }
   if (m2 === 'steel') {
-    if (m1 === 'iron' || m1 === 'rock' || m1 === 'scissors' || m1 === 'ice') return 'lose';
-    if (m1 === 'paper') return 'win';
+    if (m1 === 'iron' || m1 === 'rock' || m1 === 'scissors' || m1 === 'ice' || m1 === 'fire') return 'lose';
+    if (m1 === 'paper' || m1 === 'lightning' || m1 === 'bomb') return 'win';
   }
 
-  // Iron rules: Beats rock, scissors. Loses to paper.
+  // IRON rules: Beats rock, scissors. Loses to paper, ice, steel, lightning, bomb. Draws with fire.
   if (m1 === 'iron') {
     if (m2 === 'rock' || m2 === 'scissors') return 'win';
-    if (m2 === 'paper') return 'lose';
+    if (m2 === 'paper' || m2 === 'ice' || m2 === 'steel' || m2 === 'lightning' || m2 === 'bomb') return 'lose';
+    if (m2 === 'fire') return 'draw';
   }
   if (m2 === 'iron') {
     if (m1 === 'rock' || m1 === 'scissors') return 'lose';
-    if (m1 === 'paper') return 'win';
+    if (m1 === 'paper' || m1 === 'ice' || m1 === 'steel' || m1 === 'lightning' || m1 === 'bomb') return 'win';
+    if (m1 === 'fire') return 'draw';
   }
 
   // Standard rules
@@ -334,7 +368,8 @@ io.on("connection", (socket: Socket) => {
     const room = rooms[roomId];
     if (room && room.status === 'playing') {
       // Disallow special items if not allowed in room
-      if (!room.allowSpecialItems && (data.move === 'iron' || data.move === 'ice' || data.move === 'steel')) {
+      const specialMoves = ['iron', 'ice', 'steel', 'fire', 'lightning', 'bomb'];
+      if (!room.allowSpecialItems && specialMoves.includes(data.move)) {
         data.move = 'rock';
       }
 

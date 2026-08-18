@@ -104,6 +104,15 @@ fun PlayerScoreCard(
                         Move.STEEL -> {
                             Text(text = "⚔️", fontSize = 20.sp)
                         }
+                        Move.FIRE -> {
+                            Text(text = "🔥", fontSize = 20.sp)
+                        }
+                        Move.LIGHTNING -> {
+                            Text(text = "⚡", fontSize = 20.sp)
+                        }
+                        Move.BOMB -> {
+                            Text(text = "💣", fontSize = 20.sp)
+                        }
                     }
                 } else {
                     Text(

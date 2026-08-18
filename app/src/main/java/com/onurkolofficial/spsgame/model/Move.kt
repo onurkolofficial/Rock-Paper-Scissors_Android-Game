@@ -1,7 +1,7 @@
 package com.onurkolofficial.spsgame.model
 
 enum class Move {
-    ROCK, PAPER, SCISSORS, IRON, ICE, STEEL;
+    ROCK, PAPER, SCISSORS, IRON, ICE, STEEL, FIRE, LIGHTNING, BOMB;
 
     fun toId(): String = this.name.lowercase()
 
@@ -13,6 +13,9 @@ enum class Move {
             IRON -> com.onurkolofficial.spsgame.R.string.game_iron
             ICE -> com.onurkolofficial.spsgame.R.string.game_ice
             STEEL -> com.onurkolofficial.spsgame.R.string.game_steel
+            FIRE -> com.onurkolofficial.spsgame.R.string.game_fire
+            LIGHTNING -> com.onurkolofficial.spsgame.R.string.game_lightning
+            BOMB -> com.onurkolofficial.spsgame.R.string.game_bomb
         }
     }
 
@@ -25,6 +28,9 @@ enum class Move {
                 "iron" -> IRON
                 "ice" -> ICE
                 "steel" -> STEEL
+                "fire" -> FIRE
+                "lightning" -> LIGHTNING
+                "bomb" -> BOMB
                 else -> null
             }
         }

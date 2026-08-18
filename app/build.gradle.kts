@@ -104,4 +104,5 @@ dependencies {
       exclude(group = "org.apache.httpcomponents")
   }
   implementation(libs.google.http.client.gson)
+  implementation(libs.play.app.update.ktx)
 }

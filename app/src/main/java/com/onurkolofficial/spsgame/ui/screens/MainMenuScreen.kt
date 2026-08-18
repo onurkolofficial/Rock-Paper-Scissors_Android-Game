@@ -1,12 +1,16 @@
 package com.onurkolofficial.spsgame.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +26,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import com.onurkolofficial.spsgame.R
 import com.onurkolofficial.spsgame.di.LocalAppContainer
+import com.onurkolofficial.spsgame.ui.components.NotificationsModal
+import com.onurkolofficial.spsgame.ui.components.RulesModal
 import com.onurkolofficial.spsgame.ui.components.StoreModal
+import com.onurkolofficial.spsgame.ui.components.UpdaterModal
 import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
 import com.onurkolofficial.spsgame.ui.viewmodels.MainMenuViewModel
 import com.startapp.sdk.adsbase.model.AdPreferences
@@ -41,22 +48,12 @@ fun MainMenuScreen(
 ) {
     val appContainer = LocalAppContainer.current
     val uiState by viewModel.uiState.collectAsState()
+    val isGuest = uiState.userName.equals("Guest", ignoreCase = true)
 
     LaunchedEffect(Unit) {
         appContainer.soundManager.startBgm()
         viewModel.ensureOnlineConnected()
         viewModel.refreshProfile()
-    }
-
-    if (uiState.showStore) {
-        StoreModal(
-            prefs = appContainer.prefs,
-            soundManager = appContainer.soundManager,
-            playGamesManager = appContainer.playGamesManager,
-            onClose = { viewModel.setShowStore(false) },
-            onRefreshCash = { viewModel.refreshProfile() }
-        )
-        return
     }
 
     if (uiState.showUpdateDialog) {
@@ -65,37 +62,101 @@ fun MainMenuScreen(
         }) {
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = Color(0xFF1E2124),
+                color = Color(0xFF161819),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                    .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.25f), RoundedCornerShape(24.dp))
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(text = "🚀", fontSize = 22.sp)
+                            Text(
+                                text = "v${com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME}",
+                                color = Color(0xFFFFD700),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 17.sp
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .background(Color(0xFFFFD700).copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.notifications_latest_badge).toAppUppercase(),
+                                color = Color(0xFFFFD700),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Text(
-                        text = stringResource(id = R.string.update_dialog_title, com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME),
-                        color = Color(0xFF10B981),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(id = R.string.update_dialog_features),
-                        color = Color.White.copy(alpha = 0.8f),
+                        text = stringResource(id = R.string.notifications_v410_title),
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
-                        lineHeight = 20.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Scrollable features list
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 280.dp)
+                            .verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            stringResource(id = R.string.notifications_v410_f1),
+                            stringResource(id = R.string.notifications_v410_f2),
+                            stringResource(id = R.string.notifications_v410_f3),
+                            stringResource(id = R.string.notifications_v410_f4),
+                            stringResource(id = R.string.notifications_v410_f5),
+                            stringResource(id = R.string.notifications_v410_f6),
+                            stringResource(id = R.string.notifications_v410_f7),
+                            stringResource(id = R.string.notifications_v410_f8),
+                            stringResource(id = R.string.notifications_v410_f9)
+                        ).forEach { feature ->
+                            Text(
+                                text = feature,
+                                color = Color.White.copy(alpha = 0.75f),
+                                fontSize = 12.sp,
+                                lineHeight = 17.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
                     Button(
                         onClick = {
                             appContainer.soundManager.playClick()
+                            appContainer.vibrationManager.vibrateClick()
                             viewModel.dismissUpdateDialog()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
@@ -223,13 +284,39 @@ fun MainMenuScreen(
 
             Spacer(modifier = Modifier.weight(0.3f))
 
-            // Store / Shop button above Single Player button
-            Box(
+            // Action buttons above Single Player: Rules (Left) and Shop (Right)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.CenterEnd
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Rules Button (Sol Taraf)
+                Row(
+                    modifier = Modifier
+                        .background(Color(0xFF3B82F6).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0xFF3B82F6).copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                        .clickable {
+                            appContainer.vibrationManager.vibrateClick()
+                            appContainer.soundManager.playClick()
+                            viewModel.setShowRules(true)
+                        }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(text = "📜", fontSize = 14.sp)
+                    Text(
+                        text = stringResource(id = R.string.rules_title).toAppUppercase(),
+                        color = Color(0xFF60A5FA),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
+
+                // Shop / Store Button (Sağ Taraf)
                 Row(
                     modifier = Modifier
                         .background(Color(0xFFFFD700).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
@@ -239,11 +326,11 @@ fun MainMenuScreen(
                             appContainer.soundManager.playClick()
                             viewModel.setShowStore(true)
                         }
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(text = "🛒", fontSize = 15.sp)
+                    Text(text = "🛒", fontSize = 14.sp)
                     Text(
                         text = stringResource(id = R.string.game_shop).toAppUppercase(),
                         color = Color(0xFFFFD700),
@@ -350,6 +437,15 @@ fun MainMenuScreen(
                     appContainer.soundManager.playClick()
                     onNavigateToAchievements()
                 }
+                BottomIconButton(
+                    iconText = "🔔",
+                    label = stringResource(id = R.string.menu_notifications),
+                    showBadge = uiState.hasUnreadNotifications
+                ) {
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
+                    viewModel.setShowNotifications(true)
+                }
                 BottomIconButton(iconText = "📊", label = stringResource(id = R.string.menu_stats)) {
                     appContainer.vibrationManager.vibrateClick()
                     appContainer.soundManager.playClick()
@@ -363,6 +459,86 @@ fun MainMenuScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Animated Modals
+        AnimatedVisibility(
+            visible = uiState.showStore,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(350, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(250))
+        ) {
+            StoreModal(
+                prefs = appContainer.prefs,
+                soundManager = appContainer.soundManager,
+                playGamesManager = appContainer.playGamesManager,
+                onClose = { viewModel.setShowStore(false) },
+                onRefreshCash = { viewModel.refreshProfile() }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = uiState.showRules,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(350, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(250))
+        ) {
+            RulesModal(
+                soundManager = appContainer.soundManager,
+                vibrationManager = appContainer.vibrationManager,
+                onClose = { viewModel.setShowRules(false) }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = uiState.showNotifications,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(350, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(250))
+        ) {
+            NotificationsModal(
+                soundManager = appContainer.soundManager,
+                vibrationManager = appContainer.vibrationManager,
+                onOpenUpdater = {
+                    viewModel.setShowNotifications(false)
+                    viewModel.setShowUpdater(true)
+                },
+                onClose = { viewModel.setShowNotifications(false) }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = uiState.showUpdater,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(350, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(250))
+        ) {
+            UpdaterModal(
+                updateManager = appContainer.updateManager,
+                soundManager = appContainer.soundManager,
+                vibrationManager = appContainer.vibrationManager,
+                onClose = { viewModel.setShowUpdater(false) }
+            )
         }
     }
 }
@@ -440,6 +616,7 @@ fun MenuButton(
 fun BottomIconButton(
     iconText: String,
     label: String,
+    showBadge: Boolean = false,
     onClick: () -> Unit
 ) {
     Column(
@@ -448,19 +625,29 @@ fun BottomIconButton(
     ) {
         Box(
             modifier = Modifier
-                .size(56.dp)
+                .size(52.dp)
                 .background(Color.White.copy(alpha = 0.03f), CircleShape)
                 .border(1.dp, Color.White.copy(alpha = 0.05f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = iconText, fontSize = 26.sp)
+            Text(text = iconText, fontSize = 22.sp)
+            if (showBadge) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(Color(0xFFEF4444), CircleShape)
+                        .border(1.5.dp, Color(0xFF0F1112), CircleShape)
+                        .align(Alignment.TopEnd)
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             color = Color.White.copy(alpha = 0.4f),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
         )
     }
 }

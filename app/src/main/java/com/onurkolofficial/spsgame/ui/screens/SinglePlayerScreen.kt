@@ -1,6 +1,8 @@
 package com.onurkolofficial.spsgame.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -388,10 +390,29 @@ fun SinglePlayerScreen(
                 if (uiState.steelCount > 0) {
                     MoveSelectionCard(move = Move.STEEL, skin = activeSkin, qty = uiState.steelCount, enabled = uiState.isButtonsEnabled) { viewModel.onMoveSelected(Move.STEEL) }
                 }
+                if (uiState.fireCount > 0) {
+                    MoveSelectionCard(move = Move.FIRE, skin = activeSkin, qty = uiState.fireCount, enabled = uiState.isButtonsEnabled) { viewModel.onMoveSelected(Move.FIRE) }
+                }
+                if (uiState.lightningCount > 0) {
+                    MoveSelectionCard(move = Move.LIGHTNING, skin = activeSkin, qty = uiState.lightningCount, enabled = uiState.isButtonsEnabled) { viewModel.onMoveSelected(Move.LIGHTNING) }
+                }
+                if (uiState.bombCount > 0) {
+                    MoveSelectionCard(move = Move.BOMB, skin = activeSkin, qty = uiState.bombCount, enabled = uiState.isButtonsEnabled) { viewModel.onMoveSelected(Move.BOMB) }
+                }
             }
         }
 
-        if (showStore) {
+        AnimatedVisibility(
+            visible = showStore,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(350, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(250))
+        ) {
             StoreModal(
                 prefs = appContainer.prefs,
                 soundManager = appContainer.soundManager,
@@ -487,6 +508,18 @@ fun HandImage(
             contentDescription = "Steel",
             modifier = modifier
         )
+    } else if (move == Move.FIRE) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text(text = "🔥", fontSize = fontSize)
+        }
+    } else if (move == Move.LIGHTNING) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text(text = "⚡", fontSize = fontSize)
+        }
+    } else if (move == Move.BOMB) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text(text = "💣", fontSize = fontSize)
+        }
     } else if (skin.id == "default" || skin.id == "biker") {
         val res = when (move) {
             Move.ROCK -> skin.rockResId

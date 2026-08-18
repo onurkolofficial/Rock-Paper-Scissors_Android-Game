@@ -37,6 +37,7 @@ fun LeaderboardScreen(
     soundManager: SoundManager,
     vibrationManager: VibrationManager,
     playGamesManager: PlayGamesManager,
+    onNavigateToProfile: (name: String, wins: Int?, rank: String?) -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val leaderboardId = com.onurkolofficial.spsgame.utils.PlayGamesConstants.LEADERBOARD_WINS
@@ -142,7 +143,7 @@ fun LeaderboardScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "LİDERLİK TABLOSU YÜKLENEMEDİ",
+                                text = stringResource(id = R.string.leaderboard_load_failed).toAppUppercase(),
                                 color = Color.White.copy(alpha = 0.3f),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
@@ -162,7 +163,7 @@ fun LeaderboardScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("TEKRAR DENE", color = Color.White)
+                                Text(stringResource(id = R.string.retry).toAppUppercase(), color = Color.White)
                             }
                         }
                     }
@@ -178,10 +179,10 @@ fun LeaderboardScreen(
                         items(scores!!) { entry ->
                             val isMe = entry.name.equals(prefs.userName, ignoreCase = true)
                             LeaderboardRow(entry = entry, isMe = isMe) {
-                                if (entry.playerId != null) {
-                                    soundManager.playClick()
-                                    playGamesManager.showCompareProfile(entry.playerId)
-                                }
+                                soundManager.playClick()
+                                vibrationManager.vibrateClick()
+                                val rawWins = entry.score.replace(Regex("[^0-9]"), "").toIntOrNull()
+                                onNavigateToProfile(entry.name, rawWins, entry.rank)
                             }
                         }
                     }
@@ -194,7 +195,10 @@ fun LeaderboardScreen(
 
 @Composable
 fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean = false, onClick: () -> Unit = {}) {
-    val rankInt = entry.rank.replace(".", "").toIntOrNull() ?: 99
+    val cleanDigits = entry.rank.replace(Regex("[^0-9]"), "")
+    val rankInt = cleanDigits.toIntOrNull() ?: 99
+    val displayRankText = if (cleanDigits.isNotEmpty()) "$cleanDigits." else entry.rank
+
     val badgeColor = when (rankInt) {
         1 -> Color(0xFFFFD700) // Gold
         2 -> Color(0xFFC0C0C0) // Silver
@@ -226,14 +230,14 @@ fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean = false, onClick: () -
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(32.dp)
                 .background(badgeColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = entry.rank.replace(".", ""),
+                text = displayRankText,
                 color = badgeTextColor,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Black
             )
         }

@@ -22,10 +22,30 @@ fun AppNavHost(
     NavHost(
         navController = navController,
         startDestination = ScreenRoute.Splash,
-        enterTransition = { fadeIn() + slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
-        exitTransition = { fadeOut() + slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
-        popEnterTransition = { fadeIn() + slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) },
-        popExitTransition = { fadeOut() + slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End) }
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = androidx.compose.animation.core.tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = androidx.compose.animation.core.tween(300))
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = androidx.compose.animation.core.tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = androidx.compose.animation.core.tween(250))
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = androidx.compose.animation.core.tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = androidx.compose.animation.core.tween(300))
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = androidx.compose.animation.core.tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = androidx.compose.animation.core.tween(250))
+        }
     ) {
         composable<ScreenRoute.Splash> {
             SplashScreen(
@@ -42,7 +62,8 @@ fun AppNavHost(
                 MainMenuViewModel(
                     prefs = appContainer.prefs,
                     playGamesManager = appContainer.playGamesManager,
-                    socketManager = appContainer.socketManager
+                    socketManager = appContainer.socketManager,
+                    updateManager = appContainer.updateManager
                 )
             }
 
@@ -70,7 +91,7 @@ fun AppNavHost(
                     navController.navigate(ScreenRoute.Leaderboard)
                 },
                 onNavigateToProfile = {
-                    navController.navigate(ScreenRoute.Profile)
+                    navController.navigate(ScreenRoute.Profile())
                 }
             )
         }
@@ -86,7 +107,7 @@ fun AppNavHost(
                         ScreenRoute.TwoPlayer
                     }
                     navController.navigate(dest) {
-                        popUpTo(ScreenRoute.MainMenu)
+                        popUpTo(ScreenRoute.MainMenu) { inclusive = false }
                     }
                 }
             )
@@ -193,16 +214,28 @@ fun AppNavHost(
                 soundManager = appContainer.soundManager,
                 vibrationManager = appContainer.vibrationManager,
                 playGamesManager = appContainer.playGamesManager,
+                onNavigateToProfile = { name, wins, rank ->
+                    navController.navigate(
+                        ScreenRoute.Profile(
+                            userName = name,
+                            wins = wins,
+                            rank = rank,
+                            isOtherUser = !name.equals(appContainer.prefs.userName, ignoreCase = true)
+                        )
+                    )
+                },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        composable<ScreenRoute.Profile> {
+        composable<ScreenRoute.Profile> { backStackEntry ->
+            val profileArgs = backStackEntry.toRoute<ScreenRoute.Profile>()
             ProfileScreen(
                 prefs = appContainer.prefs,
                 soundManager = appContainer.soundManager,
                 vibrationManager = appContainer.vibrationManager,
                 playGamesManager = appContainer.playGamesManager,
+                profileArgs = profileArgs,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

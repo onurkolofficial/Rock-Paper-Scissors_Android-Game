@@ -31,6 +31,9 @@ data class CloudSaveData(
     val ironCount: Int = 0,
     val iceCount: Int = 0,
     val steelCount: Int = 0,
+    val fireCount: Int = 0,
+    val lightningCount: Int = 0,
+    val bombCount: Int = 0,
     val ownedSkins: List<String> = listOf("default"),
     val activeSkin: String = "default"
 )
@@ -178,6 +181,9 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
                                         ironCount = prefs.ironCount,
                                         iceCount = prefs.iceCount,
                                         steelCount = prefs.steelCount,
+                                        fireCount = prefs.fireCount,
+                                        lightningCount = prefs.lightningCount,
+                                        bombCount = prefs.bombCount,
                                         ownedSkins = prefs.ownedSkins,
                                         activeSkin = prefs.activeSkin
                                     )
@@ -241,6 +247,9 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
                                                 prefs.ironCount = data.ironCount
                                                 prefs.iceCount = data.iceCount
                                                 prefs.steelCount = data.steelCount
+                                                prefs.fireCount = data.fireCount
+                                                prefs.lightningCount = data.lightningCount
+                                                prefs.bombCount = data.bombCount
                                                 prefs.ownedSkins = data.ownedSkins
                                                 prefs.activeSkin = data.activeSkin
                                                 Log.d(TAG, "Cloud save loaded and applied successfully")
@@ -371,9 +380,11 @@ class PlayGamesManager(private val activity: Activity, private val prefs: GamePr
                             if (scoreBuffer != null) {
                                 for (i in 0 until scoreBuffer.count) {
                                     val item = scoreBuffer.get(i)
+                                    val rankDigits = item.displayRank.replace(Regex("[^0-9]"), "")
+                                    val formattedRank = if (rankDigits.isNotEmpty()) "$rankDigits." else "${i + 1}."
                                     entries.add(
                                         LeaderboardEntry(
-                                            rank = item.displayRank,
+                                            rank = formattedRank,
                                             name = item.scoreHolderDisplayName,
                                             score = item.displayScore,
                                             iconUri = item.scoreHolderIconImageUri?.toString() ?: "",

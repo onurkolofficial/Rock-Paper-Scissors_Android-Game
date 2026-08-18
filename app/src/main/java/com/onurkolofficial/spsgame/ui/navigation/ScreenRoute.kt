@@ -34,5 +34,10 @@ sealed interface ScreenRoute {
     data object Leaderboard : ScreenRoute
 
     @Serializable
-    data object Profile : ScreenRoute
+    data class Profile(
+        val userName: String? = null,
+        val wins: Int? = null,
+        val rank: String? = null,
+        val isOtherUser: Boolean = false
+    ) : ScreenRoute
 }
