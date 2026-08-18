@@ -1,8 +1,5 @@
 package com.onurkolofficial.spsgame.ui.screens
-import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
-import androidx.compose.ui.window.Dialog
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,24 +19,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import com.onurkolofficial.spsgame.R
-import com.onurkolofficial.spsgame.data.GamePreferences
-import com.startapp.sdk.adsbase.model.AdPreferences
+import com.onurkolofficial.spsgame.di.LocalAppContainer
 import com.onurkolofficial.spsgame.ui.components.StoreModal
-import com.onurkolofficial.spsgame.utils.GameAppConfig
-import com.onurkolofficial.spsgame.utils.PlayGamesManager
-import com.onurkolofficial.spsgame.utils.SoundManager
-import com.onurkolofficial.spsgame.utils.VibrationManager
-import io.socket.client.IO
-import io.socket.client.Socket
-import org.json.JSONObject
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
+import com.onurkolofficial.spsgame.ui.viewmodels.MainMenuViewModel
+import com.startapp.sdk.adsbase.model.AdPreferences
 
 @Composable
 fun MainMenuScreen(
-    prefs: GamePreferences,
-    soundManager: SoundManager,
-    vibrationManager: VibrationManager,
-    playGamesManager: PlayGamesManager,
+    viewModel: MainMenuViewModel,
     onNavigateToSinglePlayer: () -> Unit,
     onNavigateToTwoPlayer: () -> Unit,
     onNavigateToOnlineMultiplayer: () -> Unit,
@@ -49,71 +39,28 @@ fun MainMenuScreen(
     onNavigateToLeaderboard: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
-    var showStore by remember { mutableStateOf(false) }
-    var userName by remember { mutableStateOf(prefs.userName) }
-    var statsCash by remember { mutableIntStateOf(prefs.statsCash) }
-    var onlinePlayers by remember { mutableStateOf<Int?>(null) }
-    var showUpdateDialog by remember {
-        mutableStateOf(prefs.lastSeenUpdateDialogVersion != com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME)
-    }
+    val appContainer = LocalAppContainer.current
+    val uiState by viewModel.uiState.collectAsState()
+
     LaunchedEffect(Unit) {
-        soundManager.startBgm()
-        playGamesManager.checkSilentSignIn { success, name, _ ->
-            if (success && name != null) {
-                prefs.userName = name
-                userName = name
-            }
-        }
+        appContainer.soundManager.startBgm()
+        viewModel.refreshProfile()
     }
 
-    DisposableEffect(Unit) {
-        val socketUrl = GameAppConfig.SOCKET_URL
-        var socket: Socket? = null
-        try {
-            val opts = IO.Options().apply {
-                forceNew = true
-                reconnection = true
-            }
-            socket = IO.socket(socketUrl, opts)
-            socket.on(Socket.EVENT_CONNECT) {
-                socket?.emit("request_player_count")
-            }
-            socket.on("player_count") { args ->
-                if (args.isNotEmpty()) {
-                    val data = args[0] as? JSONObject
-                    val count = data?.optInt("count", 2) ?: 2
-                    onlinePlayers = count
-                }
-            }
-            socket.connect()
-        } catch (e: Exception) {
-            Log.e("MainMenuScreen", "Error connecting socket for player count", e)
-        }
-
-        onDispose {
-            try {
-                socket?.disconnect()
-            } catch (e: Exception) {
-                // ignore
-            }
-        }
-    }
-
-    if (showStore) {
+    if (uiState.showStore) {
         StoreModal(
-            prefs = prefs,
-            soundManager = soundManager,
-            playGamesManager = playGamesManager,
-            onClose = { showStore = false },
-            onRefreshCash = { statsCash = prefs.statsCash }
+            prefs = appContainer.prefs,
+            soundManager = appContainer.soundManager,
+            playGamesManager = appContainer.playGamesManager,
+            onClose = { viewModel.setShowStore(false) },
+            onRefreshCash = { viewModel.refreshProfile() }
         )
         return
     }
 
-    if (showUpdateDialog) {
+    if (uiState.showUpdateDialog) {
         Dialog(onDismissRequest = {
-            prefs.lastSeenUpdateDialogVersion = com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME
-            showUpdateDialog = false
+            viewModel.dismissUpdateDialog()
         }) {
             Surface(
                 shape = RoundedCornerShape(24.dp),
@@ -144,9 +91,8 @@ fun MainMenuScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = {
-                            soundManager.playClick()
-                            prefs.lastSeenUpdateDialogVersion = com.onurkolofficial.spsgame.BuildConfig.VERSION_NAME
-                            showUpdateDialog = false
+                            appContainer.soundManager.playClick()
+                            viewModel.dismissUpdateDialog()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                         shape = RoundedCornerShape(14.dp),
@@ -175,7 +121,7 @@ fun MainMenuScreen(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Start.io Banner Ad placement using AndroidView
+            // Top Start.io Banner Ad placement
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -199,20 +145,20 @@ fun MainMenuScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // User Info Header
-            val isGuest = userName == "Guest"
+            val isGuest = uiState.userName == "Guest"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White.copy(alpha = 0.02f), RoundedCornerShape(20.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp))
                     .clickable {
-                        vibrationManager.vibrateClick()
-                        soundManager.playClick()
+                        appContainer.vibrationManager.vibrateClick()
+                        appContainer.soundManager.playClick()
                         if (isGuest) {
-                            playGamesManager.signIn { success, name, _ ->
+                            appContainer.playGamesManager.signIn { success, name, _ ->
                                 if (success && name != null) {
-                                    prefs.userName = name
-                                    userName = name
+                                    appContainer.prefs.userName = name
+                                    viewModel.refreshProfile()
                                 }
                             }
                         } else {
@@ -238,7 +184,7 @@ fun MainMenuScreen(
                     }
                     Column {
                         Text(
-                            text = userName,
+                            text = uiState.userName,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
@@ -250,8 +196,6 @@ fun MainMenuScreen(
                         )
                     }
                 }
-
-                // Removed Balance/Logout Display
             }
 
             Spacer(modifier = Modifier.weight(0.2f))
@@ -266,7 +210,7 @@ fun MainMenuScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            
+
             Text(
                 text = "NEW NATIVE EDITION",
                 color = Color(0xFFFFD700),
@@ -278,7 +222,7 @@ fun MainMenuScreen(
 
             Spacer(modifier = Modifier.weight(0.3f))
 
-            // Store / Shop button above Single Player button (aligned to the right)
+            // Store / Shop button above Single Player button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -290,9 +234,9 @@ fun MainMenuScreen(
                         .background(Color(0xFFFFD700).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
                         .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
                         .clickable {
-                            vibrationManager.vibrateClick()
-                            soundManager.playClick()
-                            showStore = true
+                            appContainer.vibrationManager.vibrateClick()
+                            appContainer.soundManager.playClick()
+                            viewModel.setShowStore(true)
                         }
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -323,8 +267,8 @@ fun MainMenuScreen(
                     containerColor = Color(0xFF2C2E30),
                     iconContainerColor = Color(0xFF434548)
                 ) {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
                     onNavigateToSinglePlayer()
                 }
 
@@ -334,8 +278,8 @@ fun MainMenuScreen(
                     containerColor = Color(0xFF141416),
                     iconContainerColor = Color(0xFF222325)
                 ) {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
                     onNavigateToTwoPlayer()
                 }
 
@@ -345,7 +289,8 @@ fun MainMenuScreen(
                     containerColor = Color(0xFF1B2F52),
                     iconContainerColor = Color(0xFF2D4B7C),
                     subTextContent = {
-                        if (onlinePlayers != null) {
+                        val onlineCount = uiState.onlinePlayersCount
+                        if (onlineCount != null) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
@@ -354,7 +299,7 @@ fun MainMenuScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "$onlinePlayers ${stringResource(id = R.string.online_players_count).toAppUppercase()}",
+                                    text = "$onlineCount ${stringResource(id = R.string.online_players_count).toAppUppercase()}",
                                     color = Color(0xFF10B981),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
@@ -380,12 +325,10 @@ fun MainMenuScreen(
                         }
                     }
                 ) {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
                     onNavigateToOnlineMultiplayer()
                 }
-
-
             }
 
             Spacer(modifier = Modifier.weight(0.3f))
@@ -397,23 +340,23 @@ fun MainMenuScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BottomIconButton(iconText = "🥇", label = stringResource(id = R.string.leaderboard)) {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
                     onNavigateToLeaderboard()
                 }
                 BottomIconButton(iconText = "🏆", label = stringResource(id = R.string.achievements)) {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
                     onNavigateToAchievements()
                 }
                 BottomIconButton(iconText = "📊", label = stringResource(id = R.string.menu_stats)) {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
                     onNavigateToStats()
                 }
                 BottomIconButton(iconText = "⚙️", label = stringResource(id = R.string.menu_settings)) {
-                    vibrationManager.vibrateClick()
-                    soundManager.playClick()
+                    appContainer.vibrationManager.vibrateClick()
+                    appContainer.soundManager.playClick()
                     onNavigateToSettings()
                 }
             }
@@ -438,9 +381,7 @@ fun MenuButton(
 ) {
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor
-        ),
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
         shape = RoundedCornerShape(20.dp),
         border = border,
         contentPadding = PaddingValues(16.dp),
@@ -453,7 +394,6 @@ fun MenuButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-            // Left Icon Box
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -467,13 +407,10 @@ fun MenuButton(
                     color = iconColor
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
-            // Texts (Title & Subtitle)
-            Column(
-                verticalArrangement = Arrangement.Center
-            ) {
+
+            Column(verticalArrangement = Arrangement.Center) {
                 Text(
                     text = text.toAppUppercase(),
                     color = textColor,
@@ -526,4 +463,3 @@ fun BottomIconButton(
         )
     }
 }
-

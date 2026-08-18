@@ -1,15 +1,15 @@
 package com.onurkolofficial.spsgame.ui.screens
 
-import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
-
-import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -23,78 +23,45 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.activity.compose.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onurkolofficial.spsgame.R
-import com.onurkolofficial.spsgame.data.GamePreferences
+import com.onurkolofficial.spsgame.di.LocalAppContainer
 import com.onurkolofficial.spsgame.model.GameResult
 import com.onurkolofficial.spsgame.model.Move
 import com.onurkolofficial.spsgame.ui.components.AlertModal
 import com.onurkolofficial.spsgame.ui.components.ConfirmModal
 import com.onurkolofficial.spsgame.ui.components.SKINS_LIST
-import com.onurkolofficial.spsgame.utils.GameAppConfig
-import com.onurkolofficial.spsgame.utils.SoundManager
-import com.onurkolofficial.spsgame.utils.VibrationManager
-import com.onurkolofficial.spsgame.utils.PlayGamesManager
-import io.socket.client.IO
-import io.socket.client.Socket
+import com.onurkolofficial.spsgame.ui.localization.toAppUppercase
+import com.onurkolofficial.spsgame.ui.viewmodels.OnlineMultiplayerViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 enum class MultiplayerMode { SELECTION, MATCHMAKING, CREATE_ROOM, JOIN_ROOM, CONNECTING, IN_GAME }
 enum class MatchStatus { CONNECTING, WAITING, STARTING, LOADING, PLAYING, RESULT, GAME_OVER, OPPONENT_DISCONNECTED }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnlineMultiplayerScreen(
-    prefs: GamePreferences,
-    soundManager: SoundManager,
-    vibrationManager: VibrationManager,
-    playGamesManager: PlayGamesManager,
+    viewModel: OnlineMultiplayerViewModel,
     onNavigateBack: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val activity = object {
-        fun runOnUiThread(action: () -> Unit) {
-            coroutineScope.launch { action() }
-        }
-    }
-    
-    val socketUrl = GameAppConfig.SOCKET_URL
-    var socket by remember { mutableStateOf<Socket?>(null) }
-    var gameMode by remember { mutableStateOf(MultiplayerMode.SELECTION) }
-    var matchStatus by remember { mutableStateOf(MatchStatus.CONNECTING) }
-    
-    var roomCodeInput by remember { mutableStateOf("") }
-    var roomId by remember { mutableStateOf<String?>(null) }
-    var errorMsg by remember { mutableStateOf<String?>(null) }
+    val appContainer = LocalAppContainer.current
+    val uiState by viewModel.uiState.collectAsState()
     var showConfirmExit by remember { mutableStateOf(false) }
-    
-    val defaultOpponentName = stringResource(id = R.string.online_opponent_default)
-    var opponentName by remember(defaultOpponentName) { mutableStateOf(defaultOpponentName) }
-    var currentRound by remember { mutableIntStateOf(1) }
-    var totalDraws by remember { mutableIntStateOf(0) }
-    
-    var myMove by remember { mutableStateOf<Move?>(null) }
-    var opponentMove by remember { mutableStateOf<Move?>(null) }
-    var roundResult by remember { mutableStateOf<GameResult?>(null) }
-    var finalResult by remember { mutableStateOf<GameResult?>(null) }
-    
-    var myScore by remember { mutableIntStateOf(0) }
-    var opponentScore by remember { mutableIntStateOf(0) }
-    
-    var timerVal by remember { mutableStateOf<Int?>(null) }
-    var nextRoundTimerVal by remember { mutableStateOf<Int?>(null) }
-    var startingTimerVal by remember { mutableStateOf<Int?>(null) }
-    
+
+    val activeSkin = remember(uiState.activeSkinId) {
+        SKINS_LIST.find { it.id == uiState.activeSkinId } ?: SKINS_LIST[0]
+    }
+    val opponentSkin = remember(uiState.opponentSkinId) {
+        SKINS_LIST.find { it.id == uiState.opponentSkinId } ?: SKINS_LIST[0]
+    }
+
     var loadingProgress by remember { mutableStateOf(0f) }
     val animatedLoadingProgress by animateFloatAsState(
         targetValue = loadingProgress,
-        animationSpec = tween(durationMillis = 2000)
+        animationSpec = tween(durationMillis = 2000),
+        label = "LoadingProgress"
     )
 
     val msgVisuals = stringResource(id = R.string.loading_visuals)
@@ -109,29 +76,30 @@ fun OnlineMultiplayerScreen(
     val loadingMessages = remember(msgVisuals, msgSounds, msgEffects, msgResources, msgServer, msgRoom, msgGameStarting) {
         listOf(msgVisuals, msgSounds, msgEffects, msgResources, msgServer, msgRoom, msgGameStarting)
     }
-    
-    val activeSkin = remember { SKINS_LIST.find { it.id == prefs.activeSkin } ?: SKINS_LIST[0] }
-    var opponentSkinId by remember { mutableStateOf("default") }
-    val opponentSkin = remember(opponentSkinId) { SKINS_LIST.find { it.id == opponentSkinId } ?: SKINS_LIST[0] }
 
-    val handleDisconnect = {
-        socket?.disconnect()
-        socket = null
+    LaunchedEffect(uiState.matchStatus) {
+        if (uiState.matchStatus == MatchStatus.LOADING) {
+            loadingProgress = 1f
+            delay(2000)
+            viewModel.onLoadingAnimationFinished()
+        } else {
+            loadingProgress = 0f
+        }
     }
 
     val handleBackPress = {
-        if (matchStatus == MatchStatus.STARTING || matchStatus == MatchStatus.LOADING) {
+        if (uiState.matchStatus == MatchStatus.STARTING || uiState.matchStatus == MatchStatus.LOADING) {
             // Do nothing during GameLoadingScreen
-        } else if (gameMode == MultiplayerMode.IN_GAME && matchStatus != MatchStatus.GAME_OVER) {
+        } else if (uiState.gameMode == MultiplayerMode.IN_GAME && uiState.matchStatus != MatchStatus.GAME_OVER) {
             showConfirmExit = true
-        } else if (gameMode != MultiplayerMode.SELECTION && gameMode != MultiplayerMode.IN_GAME) {
-            soundManager.playClick()
-            handleDisconnect()
-            gameMode = MultiplayerMode.SELECTION
+        } else if (uiState.gameMode != MultiplayerMode.SELECTION && uiState.gameMode != MultiplayerMode.IN_GAME) {
+            appContainer.soundManager.playClick()
+            viewModel.disconnect()
+            viewModel.setGameMode(MultiplayerMode.SELECTION)
         } else {
-            soundManager.playClick()
-            handleDisconnect()
-            playGamesManager.saveGame()
+            appContainer.soundManager.playClick()
+            viewModel.disconnect()
+            appContainer.playGamesManager.saveGame()
             onNavigateBack()
         }
     }
@@ -140,258 +108,12 @@ fun OnlineMultiplayerScreen(
         handleBackPress()
     }
 
-    val connectAndEmit = { event: String, data: JSONObject ->
-        if (socket == null) {
-            try {
-                val opts = IO.Options().apply {
-                    forceNew = true
-                    reconnection = true
-                }
-                socket = IO.socket(socketUrl, opts)
-            } catch (e: Exception) {
-                Log.e("OnlineScreen", "Connection error", e)
-                errorMsg = "Connection failed to server."
-                gameMode = MultiplayerMode.SELECTION
-            }
-        }
-        
-        socket?.let { s ->
-            // Listeners
-            s.on(Socket.EVENT_CONNECT) {
-                activity.runOnUiThread {
-                    s.emit(event, data)
-                }
-            }
-            
-            s.on("waiting_for_opponent") { args ->
-                val res = args[0] as JSONObject
-                activity.runOnUiThread {
-                    matchStatus = MatchStatus.WAITING
-                    roomId = res.optString("roomId")
-                }
-            }
-            
-            s.on("private_room_created") { args ->
-                val res = args[0] as JSONObject
-                activity.runOnUiThread {
-                    matchStatus = MatchStatus.WAITING
-                    roomId = res.optString("roomId")
-                }
-            }
-            
-            s.on("join_error") { args ->
-                val res = args[0] as JSONObject
-                activity.runOnUiThread {
-                    errorMsg = res.optString("message")
-                    gameMode = MultiplayerMode.SELECTION
-                    matchStatus = MatchStatus.CONNECTING
-                }
-            }
-            
-            s.on("match_found") { args ->
-                val res = args[0] as JSONObject
-                activity.runOnUiThread {
-                    matchStatus = MatchStatus.STARTING
-                    val players = res.optJSONArray("players")
-                    if (players != null) {
-                        for (i in 0 until players.length()) {
-                            val p = players.getJSONObject(i)
-                            if (p.optString("id") != s.id()) {
-                                opponentName = p.optString("name")
-                                opponentSkinId = p.optString("skin", "default")
-                            }
-                        }
-                    }
-                    currentRound = res.optInt("round", 1)
-                    totalDraws = res.optInt("draws", 0)
-                    soundManager.playClick()
-                    vibrationManager.vibrate(50)
-                    
-                    // Start 3 second pre-match starting count down
-                    startingTimerVal = 3
-                }
-            }
-            
-            s.on("game_starting") {
-                activity.runOnUiThread {
-                    matchStatus = MatchStatus.LOADING
-                    gameMode = MultiplayerMode.IN_GAME
-                }
-            }
-            
-            s.on("round_result") { args ->
-                val res = args[0] as JSONObject
-                activity.runOnUiThread {
-                    val outcome = GameResult.fromId(res.optString("result"))
-                    roundResult = outcome
-                    opponentMove = Move.fromId(res.optString("opponentMove"))
-                    myScore = res.optInt("score")
-                    opponentScore = res.optInt("opponentScore")
-                    totalDraws = res.optInt("draws")
-                    currentRound = res.optInt("round")
-                    matchStatus = MatchStatus.RESULT
-                    timerVal = null
-                    
-                    if (currentRound < 10) {
-                        nextRoundTimerVal = 3
-                    }
-                    
-                    when (outcome) {
-                        GameResult.WIN -> soundManager.playWin()
-                        GameResult.LOSE -> soundManager.playLose()
-                        else -> soundManager.playDraw()
-                    }
-                    vibrationManager.vibrate(100)
-                }
-            }
-            
-            s.on("next_round") { args ->
-                val res = args[0] as JSONObject
-                activity.runOnUiThread {
-                    matchStatus = MatchStatus.PLAYING
-                    myMove = null
-                    opponentMove = null
-                    roundResult = null
-                    nextRoundTimerVal = null
-                    currentRound = res.optInt("round")
-                    timerVal = 10
-                }
-            }
-            
-            s.on("game_over") { args ->
-                val res = args[0] as JSONObject
-                activity.runOnUiThread {
-                    matchStatus = MatchStatus.GAME_OVER
-                    val finalOutcome = GameResult.fromId(res.optString("result"))
-                    finalResult = finalOutcome
-                    timerVal = null
-                    
-                    // Update stats
-                    when (finalOutcome) {
-                        GameResult.WIN -> prefs.statsOnlineWins++
-                        GameResult.LOSE -> prefs.statsOnlineLosses++
-                        GameResult.DRAW -> prefs.statsOnlineDraws++
-                        else -> {}
-                    }
-                    
-                    // Save history
-                    val historyList = prefs.onlineHistory.toMutableList()
-                    historyList.add(0, finalOutcome?.toId() ?: "draw")
-                    prefs.onlineHistory = historyList.take(5)
-                    
-                    playGamesManager.saveGame()
-                }
-            }
-            
-            s.on("opponent_disconnected") { args ->
-                val res = args.getOrNull(0) as? JSONObject
-                activity.runOnUiThread {
-                    matchStatus = MatchStatus.OPPONENT_DISCONNECTED
-                    if (res?.optBoolean("wasPlaying") == true) {
-                        finalResult = GameResult.WIN
-                        prefs.statsOnlineWins++
-                        
-                        val historyList = prefs.onlineHistory.toMutableList()
-                        historyList.add(0, "win")
-                        prefs.onlineHistory = historyList.take(5)
-                        
-                        playGamesManager.saveGame()
-                    }
-                }
-            }
-            
-            if (!s.connected()) {
-                s.connect()
-            } else {
-                s.emit(event, data)
-            }
-        }
-    }
-
-    val startMatchmaking = {
-        val data = JSONObject().put("name", prefs.userName).put("skin", prefs.activeSkin)
-        gameMode = MultiplayerMode.MATCHMAKING
-        matchStatus = MatchStatus.CONNECTING
-        connectAndEmit("join_matchmaking", data)
-    }
-
-    val createRoom = {
-        val data = JSONObject().put("name", prefs.userName).put("skin", prefs.activeSkin)
-        gameMode = MultiplayerMode.CREATE_ROOM
-        matchStatus = MatchStatus.CONNECTING
-        connectAndEmit("create_private_room", data)
-    }
-
-    val joinRoom = { code: String ->
-        val data = JSONObject().put("name", prefs.userName).put("roomId", code).put("skin", prefs.activeSkin)
-        gameMode = MultiplayerMode.CONNECTING
-        matchStatus = MatchStatus.CONNECTING
-        connectAndEmit("join_private_room", data)
-    }
-
-    val handleMoveSelection: (Move) -> Unit = { move ->
-        if (socket != null && matchStatus == MatchStatus.PLAYING && myMove == null) {
-            soundManager.playClick()
-            vibrationManager.vibrate(50)
-            myMove = move
-            socket?.emit("send_move", JSONObject().put("move", move.toId()))
-        }
-    }
-
-    // Handlers for starting timers
-    LaunchedEffect(timerVal) {
-        if (timerVal != null && timerVal!! > 0 && matchStatus == MatchStatus.PLAYING) {
-            delay(1000)
-            timerVal = timerVal!! - 1
-        } else if (timerVal == 0) {
-            socket?.emit("timeout_from_client", JSONObject())
-        }
-    }
-
-    LaunchedEffect(nextRoundTimerVal) {
-        if (nextRoundTimerVal != null && nextRoundTimerVal!! > 0) {
-            delay(1000)
-            nextRoundTimerVal = nextRoundTimerVal!! - 1
-        }
-    }
-
-    LaunchedEffect(startingTimerVal) {
-        if (startingTimerVal != null && startingTimerVal!! > 0) {
-            delay(1000)
-            startingTimerVal = startingTimerVal!! - 1
-        }
-    }
-
-    LaunchedEffect(matchStatus) {
-        if (matchStatus == MatchStatus.LOADING) {
-            loadingProgress = 1f
-            delay(2000)
-            matchStatus = MatchStatus.PLAYING
-            timerVal = 8 // Sync with server's 10s round timer (10 - 2s loading time)
-        } else {
-            loadingProgress = 0f
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            // Register a loss if client disconnects early in game
-            if (matchStatus == MatchStatus.PLAYING || matchStatus == MatchStatus.RESULT) {
-                prefs.statsOnlineLosses++
-                val historyList = prefs.onlineHistory.toMutableList()
-                historyList.add(0, "lose")
-                prefs.onlineHistory = historyList.take(5)
-            }
-            handleDisconnect()
-        }
-    }
-
     if (showConfirmExit) {
         ConfirmModal(
             message = stringResource(id = R.string.online_exit_confirm),
             onConfirm = {
                 showConfirmExit = false
-                handleDisconnect()
+                viewModel.disconnect()
                 onNavigateBack()
             },
             onCancel = { showConfirmExit = false }
@@ -405,7 +127,6 @@ fun OnlineMultiplayerScreen(
             .statusBarsPadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            
             // Central Control Panel (divider)
             Row(
                 modifier = Modifier
@@ -419,11 +140,11 @@ fun OnlineMultiplayerScreen(
             ) {
                 IconButton(
                     onClick = {
-                        soundManager.playClick()
-                        if (gameMode == MultiplayerMode.IN_GAME) {
+                        appContainer.soundManager.playClick()
+                        if (uiState.gameMode == MultiplayerMode.IN_GAME) {
                             showConfirmExit = true
                         } else {
-                            handleDisconnect()
+                            viewModel.disconnect()
                             onNavigateBack()
                         }
                     },
@@ -439,13 +160,13 @@ fun OnlineMultiplayerScreen(
                     )
                 }
 
-                if (matchStatus == MatchStatus.PLAYING || matchStatus == MatchStatus.RESULT) {
+                if (uiState.matchStatus == MatchStatus.PLAYING || uiState.matchStatus == MatchStatus.RESULT) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = opponentScore.toString(),
+                            text = uiState.opponentScore.toString(),
                             color = Color.White.copy(alpha = 0.6f),
                             fontWeight = FontWeight.Black,
                             fontSize = 24.sp,
@@ -460,7 +181,7 @@ fun OnlineMultiplayerScreen(
                                     .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = stringResource(id = R.string.game_round, currentRound),
+                                    text = stringResource(id = R.string.game_round, uiState.currentRound),
                                     color = Color(0xFF3B82F6),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
@@ -472,11 +193,11 @@ fun OnlineMultiplayerScreen(
                                 modifier = Modifier.padding(top = 2.dp)
                             ) {
                                 Text(
-                                    text = stringResource(id = R.string.game_draws_label, totalDraws),
+                                    text = stringResource(id = R.string.game_draws_label, uiState.totalDraws),
                                     color = Color.White.copy(alpha = 0.3f),
                                     fontSize = 11.sp
                                 )
-                                timerVal?.let { t ->
+                                uiState.timerVal?.let { t ->
                                     Text(
                                         text = "⏳ ${t}s",
                                         color = Color.Red.copy(alpha = 0.8f),
@@ -488,7 +209,7 @@ fun OnlineMultiplayerScreen(
                         }
 
                         Text(
-                            text = myScore.toString(),
+                            text = uiState.myScore.toString(),
                             color = Color.White,
                             fontWeight = FontWeight.Black,
                             fontSize = 24.sp
@@ -530,9 +251,9 @@ fun OnlineMultiplayerScreen(
                             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (matchStatus == MatchStatus.RESULT && opponentMove != null) {
-                            HandImage(move = opponentMove!!, skin = opponentSkin, modifier = Modifier.size(68.dp), fontSize = 40.sp)
-                        } else if (matchStatus == MatchStatus.PLAYING && opponentMove != null) {
+                        if (uiState.matchStatus == MatchStatus.RESULT && uiState.opponentMove != null) {
+                            HandImage(move = uiState.opponentMove!!, skin = opponentSkin, modifier = Modifier.size(68.dp), fontSize = 40.sp)
+                        } else if (uiState.matchStatus == MatchStatus.PLAYING && uiState.opponentHasMoved) {
                             Text(text = "✓", color = Color.Green, fontSize = 36.sp, fontWeight = FontWeight.Bold)
                         } else {
                             Text(text = "?", color = Color.White.copy(alpha = 0.1f), fontSize = 40.sp)
@@ -541,9 +262,8 @@ fun OnlineMultiplayerScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Opponent name (rendered straight and above the selection Box)
                     Text(
-                        text = opponentName.toAppUppercase(),
+                        text = uiState.opponentName.toAppUppercase(),
                         color = Color.White.copy(alpha = 0.3f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -575,31 +295,47 @@ fun OnlineMultiplayerScreen(
                             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (myMove != null) {
-                            HandImage(move = myMove!!, skin = activeSkin, modifier = Modifier.size(68.dp), fontSize = 40.sp)
+                        if (uiState.myMove != null) {
+                            HandImage(move = uiState.myMove!!, skin = activeSkin, modifier = Modifier.size(68.dp), fontSize = 40.sp)
                         } else {
                             Text(text = "?", color = Color.White.copy(alpha = 0.1f), fontSize = 40.sp)
                         }
                     }
 
                     // Move Select buttons
-                    if (matchStatus == MatchStatus.PLAYING && myMove == null) {
+                    if (uiState.matchStatus == MatchStatus.PLAYING && uiState.myMove == null) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
                                 .padding(horizontal = 8.dp, vertical = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             listOf(Move.ROCK, Move.PAPER, Move.SCISSORS).forEach { move ->
                                 MoveSelectionCard(move = move, skin = activeSkin, enabled = true) {
-                                    handleMoveSelection(move)
+                                    viewModel.sendMove(move)
+                                }
+                            }
+                            if (uiState.ironCount > 0) {
+                                MoveSelectionCard(move = Move.IRON, skin = activeSkin, qty = uiState.ironCount, enabled = true) {
+                                    viewModel.sendMove(Move.IRON)
+                                }
+                            }
+                            if (uiState.iceCount > 0) {
+                                MoveSelectionCard(move = Move.ICE, skin = activeSkin, qty = uiState.iceCount, enabled = true) {
+                                    viewModel.sendMove(Move.ICE)
+                                }
+                            }
+                            if (uiState.steelCount > 0) {
+                                MoveSelectionCard(move = Move.STEEL, skin = activeSkin, qty = uiState.steelCount, enabled = true) {
+                                    viewModel.sendMove(Move.STEEL)
                                 }
                             }
                         }
                     } else {
                         Text(
-                            text = prefs.userName.toAppUppercase(),
+                            text = appContainer.prefs.userName.toAppUppercase(),
                             color = Color.White.copy(alpha = 0.3f),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -612,7 +348,7 @@ fun OnlineMultiplayerScreen(
 
         // Overlay 1: Matchmaking Menu
         AnimatedVisibility(
-            visible = gameMode != MultiplayerMode.IN_GAME,
+            visible = uiState.gameMode != MultiplayerMode.IN_GAME,
             modifier = Modifier.fillMaxSize()
         ) {
             Box(
@@ -622,7 +358,6 @@ fun OnlineMultiplayerScreen(
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Exit Back
                 IconButton(
                     onClick = { handleBackPress() },
                     modifier = Modifier
@@ -637,7 +372,7 @@ fun OnlineMultiplayerScreen(
                     )
                 }
 
-                when (gameMode) {
+                when (uiState.gameMode) {
                     MultiplayerMode.SELECTION -> {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -654,7 +389,7 @@ fun OnlineMultiplayerScreen(
                             )
 
                             Button(
-                                onClick = { startMatchmaking() },
+                                onClick = { viewModel.joinMatchmaking(appContainer.prefs.userName, appContainer.prefs.activeSkin) },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6).copy(alpha = 0.15f)),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.4f)),
                                 shape = RoundedCornerShape(16.dp),
@@ -669,7 +404,7 @@ fun OnlineMultiplayerScreen(
                             }
 
                             Button(
-                                onClick = { createRoom() },
+                                onClick = { viewModel.createPrivateRoom(appContainer.prefs.userName, appContainer.prefs.activeSkin) },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6).copy(alpha = 0.15f)),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.4f)),
                                 shape = RoundedCornerShape(16.dp),
@@ -685,8 +420,8 @@ fun OnlineMultiplayerScreen(
 
                             Button(
                                 onClick = {
-                                    soundManager.playClick()
-                                    gameMode = MultiplayerMode.JOIN_ROOM
+                                    appContainer.soundManager.playClick()
+                                    viewModel.setGameMode(MultiplayerMode.JOIN_ROOM)
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981).copy(alpha = 0.15f)),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
@@ -717,8 +452,8 @@ fun OnlineMultiplayerScreen(
                             )
 
                             OutlinedTextField(
-                                value = roomCodeInput,
-                                onValueChange = { roomCodeInput = it.take(6).toAppUppercase() },
+                                value = uiState.roomCodeInput,
+                                onValueChange = { viewModel.setRoomCodeInput(it.take(6).toAppUppercase()) },
                                 placeholder = {
                                     Text(
                                         text = stringResource(id = R.string.online_room_code_placeholder),
@@ -737,8 +472,14 @@ fun OnlineMultiplayerScreen(
                             )
 
                             Button(
-                                onClick = { joinRoom(roomCodeInput) },
-                                enabled = roomCodeInput.length >= 3,
+                                onClick = {
+                                    viewModel.joinPrivateRoom(
+                                        uiState.roomCodeInput,
+                                        appContainer.prefs.userName,
+                                        appContainer.prefs.activeSkin
+                                    )
+                                },
+                                enabled = uiState.roomCodeInput.length >= 3,
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.fillMaxWidth().height(56.dp)
@@ -758,8 +499,8 @@ fun OnlineMultiplayerScreen(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
                                     .clickable {
-                                        soundManager.playClick()
-                                        gameMode = MultiplayerMode.SELECTION
+                                        appContainer.soundManager.playClick()
+                                        viewModel.setGameMode(MultiplayerMode.SELECTION)
                                     }
                                     .padding(8.dp)
                             )
@@ -771,11 +512,11 @@ fun OnlineMultiplayerScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             CircularProgressIndicator(color = Color(0xFF3B82F6))
-                            
+
                             Text(
                                 text = when {
-                                    gameMode == MultiplayerMode.CREATE_ROOM && roomId != null -> stringResource(id = R.string.online_room_created)
-                                    matchStatus == MatchStatus.WAITING -> stringResource(id = R.string.online_waiting)
+                                    uiState.gameMode == MultiplayerMode.CREATE_ROOM && uiState.roomId != null -> stringResource(id = R.string.online_room_created)
+                                    uiState.matchStatus == MatchStatus.WAITING -> stringResource(id = R.string.online_waiting)
                                     else -> stringResource(id = R.string.online_connecting)
                                 },
                                 color = Color.White,
@@ -783,7 +524,7 @@ fun OnlineMultiplayerScreen(
                                 fontWeight = FontWeight.Bold
                             )
 
-                            if (gameMode == MultiplayerMode.CREATE_ROOM && roomId != null) {
+                            if (uiState.gameMode == MultiplayerMode.CREATE_ROOM && uiState.roomId != null) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
@@ -798,7 +539,7 @@ fun OnlineMultiplayerScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = roomId!!,
+                                        text = uiState.roomId!!,
                                         color = Color.White,
                                         fontSize = 36.sp,
                                         fontWeight = FontWeight.Black,
@@ -821,7 +562,7 @@ fun OnlineMultiplayerScreen(
         }
 
         // Overlay 2: Player Joined Countdown
-        if (matchStatus == MatchStatus.STARTING) {
+        if (uiState.matchStatus == MatchStatus.STARTING) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -840,14 +581,14 @@ fun OnlineMultiplayerScreen(
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = opponentName,
+                        text = uiState.opponentName,
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = startingTimerVal?.toString() ?: "",
+                        text = uiState.startingTimerVal?.toString() ?: "",
                         color = Color.White,
                         fontSize = 72.sp,
                         fontWeight = FontWeight.Black
@@ -857,7 +598,7 @@ fun OnlineMultiplayerScreen(
         }
 
         // Overlay 2.5: Game Loading Screen
-        if (matchStatus == MatchStatus.LOADING) {
+        if (uiState.matchStatus == MatchStatus.LOADING) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -879,18 +620,18 @@ fun OnlineMultiplayerScreen(
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.sp
                     )
-                    
+
                     Spacer(modifier = Modifier.height(24.dp))
-                    
+
                     Text(
                         text = currentMessage,
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     LinearProgressIndicator(
                         progress = { animatedLoadingProgress },
                         modifier = Modifier
@@ -905,7 +646,7 @@ fun OnlineMultiplayerScreen(
         }
 
         // Overlay 3: Round Results
-        if (matchStatus == MatchStatus.RESULT && roundResult != null) {
+        if (uiState.matchStatus == MatchStatus.RESULT && uiState.roundResult != null) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -919,12 +660,12 @@ fun OnlineMultiplayerScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val outcomeColor = when (roundResult) {
+                    val outcomeColor = when (uiState.roundResult) {
                         GameResult.WIN -> Color.Green
                         GameResult.LOSE -> Color.Red
                         else -> Color.White
                     }
-                    val outcomeText = when (roundResult) {
+                    val outcomeText = when (uiState.roundResult) {
                         GameResult.WIN -> stringResource(id = R.string.game_win)
                         GameResult.LOSE -> stringResource(id = R.string.game_lose)
                         else -> stringResource(id = R.string.game_draw)
@@ -938,7 +679,7 @@ fun OnlineMultiplayerScreen(
                         letterSpacing = 2.sp
                     )
 
-                    nextRoundTimerVal?.let { t ->
+                    uiState.nextRoundTimerVal?.let { t ->
                         Text(
                             text = stringResource(id = R.string.online_next_round, t),
                             color = Color.White.copy(alpha = 0.5f),
@@ -951,7 +692,7 @@ fun OnlineMultiplayerScreen(
         }
 
         // Overlay 4: Match Finished or Opponent Disconnected
-        if (matchStatus == MatchStatus.GAME_OVER || matchStatus == MatchStatus.OPPONENT_DISCONNECTED) {
+        if (uiState.matchStatus == MatchStatus.GAME_OVER || uiState.matchStatus == MatchStatus.OPPONENT_DISCONNECTED) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -964,7 +705,7 @@ fun OnlineMultiplayerScreen(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.fillMaxWidth(0.85f)
                 ) {
-                    if (matchStatus == MatchStatus.OPPONENT_DISCONNECTED) {
+                    if (uiState.matchStatus == MatchStatus.OPPONENT_DISCONNECTED) {
                         Text(
                             text = stringResource(id = R.string.online_opponent_disconnected).toAppUppercase(),
                             color = Color.Red,
@@ -973,7 +714,7 @@ fun OnlineMultiplayerScreen(
                             letterSpacing = 1.sp,
                             textAlign = TextAlign.Center
                         )
-                        if (finalResult == GameResult.WIN) {
+                        if (uiState.finalResult == GameResult.WIN) {
                             Text(
                                 text = stringResource(id = R.string.online_you_won).toAppUppercase(),
                                 color = Color.Green,
@@ -982,17 +723,17 @@ fun OnlineMultiplayerScreen(
                             )
                         }
                     } else {
-                        val overText = when (finalResult) {
+                        val overText = when (uiState.finalResult) {
                             GameResult.WIN -> stringResource(id = R.string.game_win)
                             GameResult.LOSE -> stringResource(id = R.string.game_lose)
                             else -> stringResource(id = R.string.game_draw)
                         }
-                        val overColor = when (finalResult) {
+                        val overColor = when (uiState.finalResult) {
                             GameResult.WIN -> Color.Green
                             GameResult.LOSE -> Color.Red
                             else -> Color.White
                         }
-                        
+
                         Text(
                             text = stringResource(id = R.string.online_match_completed).toAppUppercase(),
                             color = Color.White.copy(alpha = 0.4f),
@@ -1014,17 +755,8 @@ fun OnlineMultiplayerScreen(
 
                     Button(
                         onClick = {
-                            soundManager.playClick()
-                            matchStatus = MatchStatus.CONNECTING
-                            gameMode = MultiplayerMode.SELECTION
-                            roomId = null
-                            myMove = null
-                            opponentMove = null
-                            roundResult = null
-                            finalResult = null
-                            myScore = 0
-                            opponentScore = 0
-                            handleDisconnect()
+                            appContainer.soundManager.playClick()
+                            viewModel.disconnect()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
                         shape = RoundedCornerShape(16.dp),
@@ -1046,8 +778,8 @@ fun OnlineMultiplayerScreen(
 
                     Button(
                         onClick = {
-                            soundManager.playClick()
-                            handleDisconnect()
+                            appContainer.soundManager.playClick()
+                            viewModel.disconnect()
                             onNavigateBack()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
@@ -1066,13 +798,12 @@ fun OnlineMultiplayerScreen(
         }
 
         // Alert message Dialog
-        errorMsg?.let { msg ->
+        uiState.errorMsg?.let { msg ->
             AlertModal(
                 title = stringResource(id = R.string.online_error_title).toAppUppercase(),
                 message = msg,
-                onDismiss = { errorMsg = null }
+                onDismiss = { viewModel.clearError() }
             )
         }
     }
 }
-

@@ -38,17 +38,50 @@ const playerRoomMap = new Map<string, string>(); // socketId -> roomId
 
 let onlinePlayerCount = 0;
 
-const getOutcome = (m1: string, m2: string): 'win' | 'lose' | 'draw' => {
+export type MoveType = 'rock' | 'paper' | 'scissors' | 'iron' | 'ice' | 'steel';
+
+export const getOutcome = (m1: string, m2: string): 'win' | 'lose' | 'draw' => {
   if (m1 === m2) return 'draw';
+
+  // Ice rules: Beats rock, paper, scissors, iron. Loses to steel.
+  if (m1 === 'ice') {
+    if (m2 === 'rock' || m2 === 'paper' || m2 === 'scissors' || m2 === 'iron') return 'win';
+    if (m2 === 'steel') return 'lose';
+  }
+  if (m2 === 'ice') {
+    if (m1 === 'rock' || m1 === 'paper' || m1 === 'scissors' || m1 === 'iron') return 'lose';
+    if (m1 === 'steel') return 'win';
+  }
+
+  // Steel rules: Beats iron, rock, scissors, ice. Loses to paper.
+  if (m1 === 'steel') {
+    if (m2 === 'iron' || m2 === 'rock' || m2 === 'scissors' || m2 === 'ice') return 'win';
+    if (m2 === 'paper') return 'lose';
+  }
+  if (m2 === 'steel') {
+    if (m1 === 'iron' || m1 === 'rock' || m1 === 'scissors' || m1 === 'ice') return 'lose';
+    if (m1 === 'paper') return 'win';
+  }
+
+  // Iron rules: Beats rock, scissors. Loses to paper.
+  if (m1 === 'iron') {
+    if (m2 === 'rock' || m2 === 'scissors') return 'win';
+    if (m2 === 'paper') return 'lose';
+  }
+  if (m2 === 'iron') {
+    if (m1 === 'rock' || m1 === 'scissors') return 'lose';
+    if (m1 === 'paper') return 'win';
+  }
+
+  // Standard rules
   if (
     (m1 === 'rock' && m2 === 'scissors') ||
     (m1 === 'paper' && m2 === 'rock') ||
-    (m1 === 'scissors' && m2 === 'paper') ||
-    (m1 === 'iron' && (m2 === 'rock' || m2 === 'scissors')) ||
-    (m2 === 'iron' && m1 === 'paper')
+    (m1 === 'scissors' && m2 === 'paper')
   ) {
     return 'win';
   }
+
   return 'lose';
 };
 
@@ -94,7 +127,7 @@ const evaluateRound = (roomId: string, isTimeout: boolean = false) => {
       p1Outcome = 'lose';
     }
   } else {
-    p1Outcome = getOutcome(p1.move || 'iron', p2.move || 'iron');
+    p1Outcome = getOutcome(p1.move || 'rock', p2.move || 'rock');
   }
 
   const p2Outcome = p1Outcome === 'win' ? 'lose' : (p1Outcome === 'lose' ? 'win' : 'draw');

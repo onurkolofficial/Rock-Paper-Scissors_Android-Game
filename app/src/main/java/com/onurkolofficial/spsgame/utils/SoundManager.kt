@@ -16,6 +16,7 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
     private var winSoundId = -1
     private var loseSoundId = -1
     private var drawSoundId = -1
+    private val loadedSounds = mutableSetOf<Int>()
 
     init {
         val audioAttributes = AudioAttributes.Builder()
@@ -26,7 +27,13 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
         soundPool = SoundPool.Builder()
             .setMaxStreams(5)
             .setAudioAttributes(audioAttributes)
-            .build()
+            .build().apply {
+                setOnLoadCompleteListener { _, sampleId, status ->
+                    if (status == 0) {
+                        loadedSounds.add(sampleId)
+                    }
+                }
+            }
 
         soundPool?.let { pool ->
             clickSoundId = pool.load(context, R.raw.game_effect_button_click, 1)
@@ -62,7 +69,7 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
         if (!prefs.soundEnabled) return
         try {
             if (bgmPlayer == null) {
-                bgmPlayer = MediaPlayer.create(context, R.raw.game_bgm).apply {
+                bgmPlayer = MediaPlayer.create(context, R.raw.game_bgm)?.apply {
                     isLooping = true
                 }
             }
@@ -75,6 +82,35 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
             }
         } catch (e: Exception) {
             Log.e("SoundManager", "Error starting BGM", e)
+        }
+    }
+
+    fun pauseBgm() {
+        try {
+            bgmPlayer?.let { player ->
+                if (player.isPlaying) {
+                    player.pause()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SoundManager", "Error pausing BGM", e)
+        }
+    }
+
+    fun resumeBgm() {
+        if (!prefs.soundEnabled) return
+        try {
+            if (bgmPlayer != null) {
+                val vol = prefs.musicVolume
+                bgmPlayer?.setVolume(vol, vol)
+                if (bgmPlayer?.isPlaying == false) {
+                    bgmPlayer?.start()
+                }
+            } else {
+                startBgm()
+            }
+        } catch (e: Exception) {
+            Log.e("SoundManager", "Error resuming BGM", e)
         }
     }
 
@@ -94,7 +130,7 @@ class SoundManager(private val context: Context, private val prefs: GamePreferen
 
     fun updateBgmVolume() {
         if (!prefs.soundEnabled) {
-            stopBgm()
+            pauseBgm()
             return
         }
         bgmPlayer?.let { player ->
