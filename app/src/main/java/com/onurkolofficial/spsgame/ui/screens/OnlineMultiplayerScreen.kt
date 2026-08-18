@@ -11,6 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
@@ -174,19 +175,47 @@ fun OnlineMultiplayerScreen(
                         )
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(
-                                modifier = Modifier
-                                    .background(Color(0xFF3B82F6).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFF3B82F6).copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Text(
-                                    text = stringResource(id = R.string.game_round, uiState.currentRound),
-                                    color = Color(0xFF3B82F6),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .background(Color(0xFF3B82F6).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                                        .border(1.dp, Color(0xFF3B82F6).copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(id = R.string.game_round, uiState.currentRound),
+                                        color = Color(0xFF3B82F6),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            if (uiState.allowSpecialItems) Color(0xFF8B5CF6).copy(alpha = 0.15f) else Color(0xFF3B82F6).copy(alpha = 0.15f),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .border(
+                                            1.dp,
+                                            if (uiState.allowSpecialItems) Color(0xFF8B5CF6).copy(alpha = 0.4f) else Color(0xFF3B82F6).copy(alpha = 0.4f),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (uiState.allowSpecialItems) stringResource(id = R.string.online_badge_hard) else stringResource(id = R.string.online_badge_classic),
+                                        color = if (uiState.allowSpecialItems) Color(0xFFC084FC) else Color(0xFF60A5FA),
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 1.sp
+                                    )
+                                }
                             }
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -317,19 +346,21 @@ fun OnlineMultiplayerScreen(
                                     viewModel.sendMove(move)
                                 }
                             }
-                            if (uiState.ironCount > 0) {
-                                MoveSelectionCard(move = Move.IRON, skin = activeSkin, qty = uiState.ironCount, enabled = true) {
-                                    viewModel.sendMove(Move.IRON)
+                            if (uiState.allowSpecialItems) {
+                                if (uiState.ironCount > 0) {
+                                    MoveSelectionCard(move = Move.IRON, skin = activeSkin, qty = uiState.ironCount, enabled = true) {
+                                        viewModel.sendMove(Move.IRON)
+                                    }
                                 }
-                            }
-                            if (uiState.iceCount > 0) {
-                                MoveSelectionCard(move = Move.ICE, skin = activeSkin, qty = uiState.iceCount, enabled = true) {
-                                    viewModel.sendMove(Move.ICE)
+                                if (uiState.iceCount > 0) {
+                                    MoveSelectionCard(move = Move.ICE, skin = activeSkin, qty = uiState.iceCount, enabled = true) {
+                                        viewModel.sendMove(Move.ICE)
+                                    }
                                 }
-                            }
-                            if (uiState.steelCount > 0) {
-                                MoveSelectionCard(move = Move.STEEL, skin = activeSkin, qty = uiState.steelCount, enabled = true) {
-                                    viewModel.sendMove(Move.STEEL)
+                                if (uiState.steelCount > 0) {
+                                    MoveSelectionCard(move = Move.STEEL, skin = activeSkin, qty = uiState.steelCount, enabled = true) {
+                                        viewModel.sendMove(Move.STEEL)
+                                    }
                                 }
                             }
                         }
@@ -346,7 +377,7 @@ fun OnlineMultiplayerScreen(
             }
         }
 
-        // Overlay 1: Matchmaking Menu
+        // Overlay 1: Matchmaking & Room Selection Menu
         AnimatedVisibility(
             visible = uiState.gameMode != MultiplayerMode.IN_GAME,
             modifier = Modifier.fillMaxSize()
@@ -376,63 +407,317 @@ fun OnlineMultiplayerScreen(
                     MultiplayerMode.SELECTION -> {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.fillMaxWidth(0.85f)
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth(0.9f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(vertical = 16.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.online_title),
                                 color = Color.White,
-                                fontSize = 32.sp,
+                                fontSize = 28.sp,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 2.sp,
-                                modifier = Modifier.padding(bottom = 32.dp)
+                                modifier = Modifier.padding(bottom = 12.dp)
                             )
 
-                            Button(
-                                onClick = { viewModel.joinMatchmaking(appContainer.prefs.userName, appContainer.prefs.activeSkin) },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6).copy(alpha = 0.15f)),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.4f)),
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.fillMaxWidth().height(56.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.online_matchmaking),
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Button(
-                                onClick = { viewModel.createPrivateRoom(appContainer.prefs.userName, appContainer.prefs.activeSkin) },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6).copy(alpha = 0.15f)),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.4f)),
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.fillMaxWidth().height(56.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.online_create_room),
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
+                            // Classic Mode Matchmaking
                             Button(
                                 onClick = {
                                     appContainer.soundManager.playClick()
-                                    viewModel.setGameMode(MultiplayerMode.JOIN_ROOM)
+                                    viewModel.joinMatchmaking(appContainer.prefs.userName, appContainer.prefs.activeSkin, "classic")
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6).copy(alpha = 0.15f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth().height(68.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color(0xFF3B82F6).copy(alpha = 0.25f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = "⚔️", fontSize = 20.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(verticalArrangement = Arrangement.Center) {
+                                        Text(
+                                            text = stringResource(id = R.string.online_mode_classic).toAppUppercase(),
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = 1.sp
+                                        )
+                                        Text(
+                                            text = stringResource(id = R.string.online_mode_classic_desc),
+                                            color = Color.White.copy(alpha = 0.6f),
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Hard Mode Matchmaking
+                            Button(
+                                onClick = {
+                                    appContainer.soundManager.playClick()
+                                    viewModel.joinMatchmaking(appContainer.prefs.userName, appContainer.prefs.activeSkin, "hard")
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6).copy(alpha = 0.15f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth().height(68.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color(0xFF8B5CF6).copy(alpha = 0.25f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = "⚡", fontSize = 20.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(verticalArrangement = Arrangement.Center) {
+                                        Text(
+                                            text = stringResource(id = R.string.online_mode_hard).toAppUppercase(),
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = 1.sp
+                                        )
+                                        Text(
+                                            text = stringResource(id = R.string.online_mode_hard_desc),
+                                            color = Color.White.copy(alpha = 0.6f),
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Private Room: Create Room
+                            Button(
+                                onClick = {
+                                    appContainer.soundManager.playClick()
+                                    viewModel.setGameMode(MultiplayerMode.CREATE_ROOM)
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981).copy(alpha = 0.15f)),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.fillMaxWidth().height(56.dp)
                             ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(text = "🔒", fontSize = 16.sp)
+                                    Text(
+                                        text = stringResource(id = R.string.online_create_room),
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            // Private Room: Join Room
+                            Button(
+                                onClick = {
+                                    appContainer.soundManager.playClick()
+                                    viewModel.setGameMode(MultiplayerMode.JOIN_ROOM)
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.08f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth().height(56.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(text = "🔑", fontSize = 16.sp)
+                                    Text(
+                                        text = stringResource(id = R.string.online_join_room),
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    MultiplayerMode.CREATE_ROOM -> {
+                        if (uiState.roomId == null) {
+                            // Room Configuration Screen before creating
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(20.dp),
+                                modifier = Modifier.fillMaxWidth(0.85f)
+                            ) {
                                 Text(
-                                    text = stringResource(id = R.string.online_join_room),
+                                    text = stringResource(id = R.string.online_create_room_config),
                                     color = Color.White,
-                                    fontSize = 15.sp,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 1.sp
+                                )
+
+                                // Item toggle card
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color.White.copy(alpha = 0.03f), RoundedCornerShape(16.dp))
+                                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                        Text(
+                                            text = stringResource(id = R.string.online_allow_items_toggle),
+                                            color = Color.White,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = stringResource(id = R.string.online_allow_items_desc),
+                                            color = Color.White.copy(alpha = 0.5f),
+                                            fontSize = 11.sp,
+                                            lineHeight = 16.sp
+                                        )
+                                    }
+
+                                    Switch(
+                                        checked = uiState.createRoomAllowItems,
+                                        onCheckedChange = {
+                                            appContainer.soundManager.playClick()
+                                            viewModel.setCreateRoomAllowItems(it)
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = Color(0xFF10B981),
+                                            uncheckedThumbColor = Color.White.copy(alpha = 0.5f),
+                                            uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                                        )
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        appContainer.soundManager.playClick()
+                                        viewModel.createPrivateRoom(
+                                            appContainer.prefs.userName,
+                                            appContainer.prefs.activeSkin,
+                                            uiState.createRoomAllowItems
+                                        )
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(id = R.string.online_create_room_btn).toAppUppercase(),
+                                        color = Color(0xFF0F1112),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+
+                                Text(
+                                    text = stringResource(id = R.string.online_cancel),
+                                    color = Color.White.copy(alpha = 0.4f),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .clickable {
+                                            appContainer.soundManager.playClick()
+                                            viewModel.setGameMode(MultiplayerMode.SELECTION)
+                                        }
+                                        .padding(8.dp)
+                                )
+                            }
+                        } else {
+                            // Waiting for opponent in created room
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                CircularProgressIndicator(color = Color(0xFF3B82F6))
+
+                                Text(
+                                    text = stringResource(id = R.string.online_waiting),
+                                    color = Color.White,
+                                    fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold
+                                )
+
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
+                                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                                        .padding(24.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(id = R.string.online_room_code_label).toAppUppercase(),
+                                        color = Color.White.copy(alpha = 0.4f),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = uiState.roomId!!,
+                                        color = Color.White,
+                                        fontSize = 36.sp,
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 2.sp,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                if (uiState.allowSpecialItems) Color(0xFF8B5CF6).copy(alpha = 0.2f) else Color(0xFF3B82F6).copy(alpha = 0.2f),
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .border(
+                                                1.dp,
+                                                if (uiState.allowSpecialItems) Color(0xFF8B5CF6).copy(alpha = 0.5f) else Color(0xFF3B82F6).copy(alpha = 0.5f),
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = if (uiState.allowSpecialItems) stringResource(id = R.string.online_mode_hard).toAppUppercase() else stringResource(id = R.string.online_mode_classic).toAppUppercase(),
+                                            color = if (uiState.allowSpecialItems) Color(0xFFC084FC) else Color(0xFF60A5FA),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = stringResource(id = R.string.online_room_share_msg),
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
@@ -506,7 +791,7 @@ fun OnlineMultiplayerScreen(
                             )
                         }
                     }
-                    MultiplayerMode.MATCHMAKING, MultiplayerMode.CREATE_ROOM, MultiplayerMode.CONNECTING -> {
+                    MultiplayerMode.MATCHMAKING, MultiplayerMode.CONNECTING -> {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -515,7 +800,6 @@ fun OnlineMultiplayerScreen(
 
                             Text(
                                 text = when {
-                                    uiState.gameMode == MultiplayerMode.CREATE_ROOM && uiState.roomId != null -> stringResource(id = R.string.online_room_created)
                                     uiState.matchStatus == MatchStatus.WAITING -> stringResource(id = R.string.online_waiting)
                                     else -> stringResource(id = R.string.online_connecting)
                                 },
@@ -523,37 +807,6 @@ fun OnlineMultiplayerScreen(
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
                             )
-
-                            if (uiState.gameMode == MultiplayerMode.CREATE_ROOM && uiState.roomId != null) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier
-                                        .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
-                                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                                        .padding(24.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(id = R.string.online_room_code_label).toAppUppercase(),
-                                        color = Color.White.copy(alpha = 0.4f),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = uiState.roomId!!,
-                                        color = Color.White,
-                                        fontSize = 36.sp,
-                                        fontWeight = FontWeight.Black,
-                                        letterSpacing = 2.sp,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    )
-                                }
-                                Text(
-                                    text = stringResource(id = R.string.online_room_share_msg),
-                                    color = Color.White.copy(alpha = 0.6f),
-                                    fontSize = 12.sp,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
                         }
                     }
                     else -> {}

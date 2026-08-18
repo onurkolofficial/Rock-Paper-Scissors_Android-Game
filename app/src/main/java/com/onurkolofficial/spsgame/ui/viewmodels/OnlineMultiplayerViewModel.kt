@@ -48,7 +48,10 @@ data class OnlineMultiplayerUiState(
     val activeSkinId: String = "default",
     val ironCount: Int = 0,
     val iceCount: Int = 0,
-    val steelCount: Int = 0
+    val steelCount: Int = 0,
+    val allowSpecialItems: Boolean = false,
+    val roomMode: String = "classic",
+    val createRoomAllowItems: Boolean = false
 )
 
 class OnlineMultiplayerViewModel(
@@ -90,20 +93,40 @@ class OnlineMultiplayerViewModel(
         _uiState.update { it.copy(errorMsg = null) }
     }
 
-    fun joinMatchmaking(name: String, skin: String) {
-        _uiState.update { it.copy(gameMode = MultiplayerMode.CONNECTING, matchStatus = MatchStatus.CONNECTING) }
+    fun setCreateRoomAllowItems(allow: Boolean) {
+        _uiState.update { it.copy(createRoomAllowItems = allow) }
+    }
+
+    fun joinMatchmaking(name: String, skin: String, mode: String = "classic") {
+        _uiState.update {
+            it.copy(
+                gameMode = MultiplayerMode.CONNECTING,
+                matchStatus = MatchStatus.CONNECTING,
+                roomMode = mode,
+                allowSpecialItems = (mode == "hard")
+            )
+        }
         val data = JSONObject().apply {
             put("name", name)
             put("skin", skin)
+            put("mode", mode)
         }
         connectAndEmit("join_matchmaking", data)
     }
 
-    fun createPrivateRoom(name: String, skin: String) {
-        _uiState.update { it.copy(gameMode = MultiplayerMode.CREATE_ROOM, matchStatus = MatchStatus.CONNECTING) }
+    fun createPrivateRoom(name: String, skin: String, allowSpecialItems: Boolean) {
+        _uiState.update {
+            it.copy(
+                gameMode = MultiplayerMode.CREATE_ROOM,
+                matchStatus = MatchStatus.CONNECTING,
+                allowSpecialItems = allowSpecialItems,
+                roomMode = if (allowSpecialItems) "hard" else "classic"
+            )
+        }
         val data = JSONObject().apply {
             put("name", name)
             put("skin", skin)
+            put("allowSpecialItems", allowSpecialItems)
         }
         connectAndEmit("create_private_room", data)
     }
@@ -126,21 +149,21 @@ class OnlineMultiplayerViewModel(
         var canPlay = true
         when (move) {
             Move.IRON -> {
-                if (state.ironCount > 0) {
+                if (state.allowSpecialItems && state.ironCount > 0) {
                     val newCount = state.ironCount - 1
                     prefs.ironCount = newCount
                     _uiState.update { it.copy(ironCount = newCount) }
                 } else canPlay = false
             }
             Move.ICE -> {
-                if (state.iceCount > 0) {
+                if (state.allowSpecialItems && state.iceCount > 0) {
                     val newCount = state.iceCount - 1
                     prefs.iceCount = newCount
                     _uiState.update { it.copy(iceCount = newCount) }
                 } else canPlay = false
             }
             Move.STEEL -> {
-                if (state.steelCount > 0) {
+                if (state.allowSpecialItems && state.steelCount > 0) {
                     val newCount = state.steelCount - 1
                     prefs.steelCount = newCount
                     _uiState.update { it.copy(steelCount = newCount) }
@@ -182,7 +205,9 @@ class OnlineMultiplayerViewModel(
             _uiState.update {
                 it.copy(
                     matchStatus = MatchStatus.WAITING,
-                    roomId = res.optString("roomId")
+                    roomId = res.optString("roomId"),
+                    allowSpecialItems = res.optBoolean("allowSpecialItems", false),
+                    roomMode = res.optString("mode", "classic")
                 )
             }
         }
@@ -192,7 +217,8 @@ class OnlineMultiplayerViewModel(
             _uiState.update {
                 it.copy(
                     matchStatus = MatchStatus.WAITING,
-                    roomId = res.optString("roomId")
+                    roomId = res.optString("roomId"),
+                    allowSpecialItems = res.optBoolean("allowSpecialItems", false)
                 )
             }
         }
@@ -223,13 +249,18 @@ class OnlineMultiplayerViewModel(
                 }
             }
 
+            val allowItems = res.optBoolean("allowSpecialItems", false)
+            val mode = res.optString("mode", if (allowItems) "hard" else "classic")
+
             _uiState.update {
                 it.copy(
                     matchStatus = MatchStatus.STARTING,
                     opponentName = oppName,
                     opponentSkinId = oppSkin,
                     currentRound = res.optInt("round", 1),
-                    totalDraws = res.optInt("draws", 0)
+                    totalDraws = res.optInt("draws", 0),
+                    allowSpecialItems = allowItems,
+                    roomMode = mode
                 )
             }
 

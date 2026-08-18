@@ -190,4 +190,14 @@
     <string name="online_opponent_abandoned_won">Rakip oyunu terk etti. 5 tur tamamlandığı için hükmen galip sayıldınız!</string>
     <string name="online_opponent_abandoned_void">Rakip oyunu terk etti. 5 tur tamamlanmadığı için maç geçersiz sayıldı.</string>
     <string name="online_match_void">MAÇ GEÇERSİZ</string>
+    <string name="online_mode_classic">Klasik Mod</string>
+    <string name="online_mode_classic_desc">Sadece Taş-Kağıt-Makas ve Görünümler</string>
+    <string name="online_mode_hard">Zor Mod</string>
+    <string name="online_mode_hard_desc">Mağaza Nesneleri (Demir, Buz, Çelik) Kullanılabilir</string>
+    <string name="online_allow_items_toggle">Nesneleri Kullan</string>
+    <string name="online_allow_items_desc">Bu odada Demir, Buz ve Çelik nesneleri kullanılabilsin</string>
+    <string name="online_badge_classic">KLASİK</string>
+    <string name="online_badge_hard">ZOR</string>
+    <string name="online_create_room_config">Özel Oda Oluştur</string>
+    <string name="online_create_room_btn">ODA OLUŞTUR</string>
 </resources>

@@ -133,10 +133,10 @@ object GameAppConfig {
 | Olay Adı | Veri (Payload) | Açıklama |
 | :--- | :--- | :--- |
 | `request_player_count` | `{}` | Anlık çevrim içi oyuncu sayısını talep eder. |
-| `join_matchmaking` | `{ name: string, skin?: string }` | Rastgele bir rakiple eşleşme sırasına girer. |
-| `create_private_room` | `{ name: string, skin?: string }` | 6 haneli özel oda kodu oluşturur ve rakip bekler. |
+| `join_matchmaking` | `{ name: string, skin?: string, mode?: "classic" \| "hard" }` | Seçilen modda (Klasik veya Zor) rastgele bir rakiple eşleşme sırasına girer. |
+| `create_private_room` | `{ name: string, skin?: string, allowSpecialItems?: boolean }` | Özel oda oluşturur ("Nesneleri Kullan" ayarı ile). |
 | `join_private_room` | `{ roomId: string, name: string, skin?: string }` | Kodunu bildiği özel odaya katılır. |
-| `send_move` | `{ move: "rock" \| "paper" \| "scissors" \| "iron" \| "ice" \| "steel" }` | O tur için yapılan hamleyi iletir. |
+| `send_move` | `{ move: "rock" \| "paper" \| "scissors" \| "iron" \| "ice" \| "steel" }` | O tur için yapılan hamleyi iletir. (Klasik modda sadece taş-kağıt-makas geçerlidir). |
 | `leave_game` | `{}` | Oyuncu maçtan veya odadan bilerek ayrıldığında (terk ettiğinde) sunucuya bildirir. |
 | `timeout_from_client` | `{}` | Oyuncunun 10 saniyelik süresi dolduğunda otomatik turu sonlandırmak için çağrılır. |
 
@@ -147,10 +147,10 @@ object GameAppConfig {
 | Olay Adı | Veri (Payload) | Açıklama |
 | :--- | :--- | :--- |
 | `player_count` | `{ count: number }` | Anlık bağlı aktif çevrim içi oyuncu sayısı. |
-| `waiting_for_opponent` | `{ roomId: string }` | Eşleşme veya oda açıldıktan sonra rakip bekleniyor bildirimi. |
-| `private_room_created` | `{ roomId: string }` | Özel oda başarıyla oluşturuldu, oda kodu üretildi. |
+| `waiting_for_opponent` | `{ roomId: string, mode?: string, allowSpecialItems?: boolean }` | Eşleşme veya oda açıldıktan sonra rakip bekleniyor bildirimi. |
+| `private_room_created` | `{ roomId: string, allowSpecialItems?: boolean }` | Özel oda başarıyla oluşturuldu, oda kodu üretildi. |
 | `join_error` | `{ message: string }` | Oda dolu, bulunamadı veya katılım hatası bildirimi. |
-| `match_found` | `{ roomId, round, draws, players: [...] }` | Rakip bulundu; oyuncu isimleri ve skinleri iletildi. |
+| `match_found` | `{ roomId, round, draws, allowSpecialItems, mode, players: [...] }` | Rakip bulundu; oyuncu isimleri, mod ve nesne izinleri iletildi. |
 | `game_starting` | `{}` | 3 saniyelik geri sayım sonrası maç ekranının yüklenmesi talimatı. |
 | `opponent_moved` | `{}` | Rakibin hamlesini yaptığını bildirir (hamlenin içeriği tur bitene kadar gizlenir). |
 | `round_result` | `{ result: "win" \| "lose" \| "draw", opponentMove, score, opponentScore, draws, round }` | Tur değerlendirme sonucu. |

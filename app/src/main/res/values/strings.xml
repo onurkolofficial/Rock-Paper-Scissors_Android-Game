@@ -190,4 +190,14 @@
     <string name="online_opponent_abandoned_won">Opponent left the match. Since more than 5 rounds were played, you won by forfeit!</string>
     <string name="online_opponent_abandoned_void">Opponent left the match. Since 5 rounds were not reached, the match is void (no win/loss recorded).</string>
     <string name="online_match_void">MATCH VOID</string>
+    <string name="online_mode_classic">Classic Mode</string>
+    <string name="online_mode_classic_desc">Only Rock-Paper-Scissors &amp; Skins</string>
+    <string name="online_mode_hard">Hard Mode</string>
+    <string name="online_mode_hard_desc">Special Powers (Iron, Ice, Steel) Allowed</string>
+    <string name="online_allow_items_toggle">Use Special Items</string>
+    <string name="online_allow_items_desc">Allow Iron, Ice, and Steel in this room</string>
+    <string name="online_badge_classic">CLASSIC</string>
+    <string name="online_badge_hard">HARD</string>
+    <string name="online_create_room_config">Create Private Room</string>
+    <string name="online_create_room_btn">CREATE ROOM</string>
 </resources>

@@ -31,6 +31,8 @@ interface Room {
   draws: number;
   roundTimeoutId?: NodeJS.Timeout;
   isPrivate?: boolean;
+  allowSpecialItems?: boolean;
+  mode?: 'classic' | 'hard';
 }
 
 const rooms: Record<string, Room> = {};
@@ -205,17 +207,20 @@ io.on("connection", (socket: Socket) => {
     socket.emit("player_count", { count: io.sockets.sockets.size });
   });
 
-  socket.on("join_matchmaking", (data: { name: string, skin?: string }) => {
+  socket.on("join_matchmaking", (data: { name: string, skin?: string, mode?: 'classic' | 'hard' }) => {
+    const requestedMode = data.mode || 'classic';
+    const allowSpecial = requestedMode === 'hard';
     let joinedRoom = null;
 
-    // Look for a waiting room with 1 player
+    // Look for a waiting room with 1 player that matches the same mode
     for (const roomId in rooms) {
-      if (rooms[roomId].status === 'waiting' && Object.keys(rooms[roomId].players).length === 1 && !rooms[roomId].isPrivate) {
+      const r = rooms[roomId];
+      if (r.status === 'waiting' && Object.keys(r.players).length === 1 && !r.isPrivate && r.mode === requestedMode) {
         joinedRoom = roomId;
-        rooms[roomId].players[socket.id] = { socketId: socket.id, name: data.name || 'Guest', move: null, score: 0, skin: data.skin || 'default' };
-        rooms[roomId].status = 'playing';
-        rooms[roomId].round = 1;
-        rooms[roomId].draws = 0;
+        r.players[socket.id] = { socketId: socket.id, name: data.name || 'Guest', move: null, score: 0, skin: data.skin || 'default' };
+        r.status = 'playing';
+        r.round = 1;
+        r.draws = 0;
         playerRoomMap.set(socket.id, roomId);
 
         socket.join(roomId);
@@ -225,7 +230,9 @@ io.on("connection", (socket: Socket) => {
           roomId,
           round: 1,
           draws: 0,
-          players: Object.values(rooms[roomId].players).map(p => ({ id: p.socketId, name: p.name, score: p.score, skin: p.skin }))
+          allowSpecialItems: r.allowSpecialItems ?? allowSpecial,
+          mode: r.mode,
+          players: Object.values(r.players).map(p => ({ id: p.socketId, name: p.name, score: p.score, skin: p.skin }))
         });
 
         // Delay 3 seconds before starting the first round timeout
@@ -242,7 +249,7 @@ io.on("connection", (socket: Socket) => {
       }
     }
 
-    // Otherwise create a new room
+    // Otherwise create a new room with requested mode
     if (!joinedRoom) {
       const newRoomId = Math.random().toString(36).substring(2, 9);
       rooms[newRoomId] = {
@@ -253,16 +260,19 @@ io.on("connection", (socket: Socket) => {
         status: 'waiting',
         round: 1,
         draws: 0,
-        isPrivate: false
+        isPrivate: false,
+        mode: requestedMode,
+        allowSpecialItems: allowSpecial
       };
       playerRoomMap.set(socket.id, newRoomId);
       socket.join(newRoomId);
-      socket.emit("waiting_for_opponent", { roomId: newRoomId });
+      socket.emit("waiting_for_opponent", { roomId: newRoomId, mode: requestedMode, allowSpecialItems: allowSpecial });
     }
   });
 
-  socket.on("create_private_room", (data: { name: string, skin?: string }) => {
+  socket.on("create_private_room", (data: { name: string, skin?: string, allowSpecialItems?: boolean }) => {
     const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const allowSpecial = data.allowSpecialItems ?? false;
     rooms[newRoomId] = {
       id: newRoomId,
       players: {
@@ -271,11 +281,13 @@ io.on("connection", (socket: Socket) => {
       status: 'waiting',
       round: 1,
       draws: 0,
-      isPrivate: true
+      isPrivate: true,
+      mode: allowSpecial ? 'hard' : 'classic',
+      allowSpecialItems: allowSpecial
     };
     playerRoomMap.set(socket.id, newRoomId);
     socket.join(newRoomId);
-    socket.emit("private_room_created", { roomId: newRoomId });
+    socket.emit("private_room_created", { roomId: newRoomId, allowSpecialItems: allowSpecial });
   });
 
   socket.on("join_private_room", (data: { name: string, roomId: string, skin?: string }) => {
@@ -295,6 +307,8 @@ io.on("connection", (socket: Socket) => {
         roomId,
         round: 1,
         draws: 0,
+        allowSpecialItems: room.allowSpecialItems ?? false,
+        mode: room.mode ?? (room.allowSpecialItems ? 'hard' : 'classic'),
         players: Object.values(room.players).map(p => ({ id: p.socketId, name: p.name, score: p.score, skin: p.skin }))
       });
 
@@ -319,6 +333,11 @@ io.on("connection", (socket: Socket) => {
 
     const room = rooms[roomId];
     if (room && room.status === 'playing') {
+      // Disallow special items if not allowed in room
+      if (!room.allowSpecialItems && (data.move === 'iron' || data.move === 'ice' || data.move === 'steel')) {
+        data.move = 'rock';
+      }
+
       const player = room.players[socket.id];
       if (player && !player.move) {
         player.move = data.move;
